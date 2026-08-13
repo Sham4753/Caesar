@@ -380,7 +380,20 @@
           <div class="form-group"><label>السعر الجديد (ل.س) *</label><input type="number" id="offer-price" min="0"></div>
           <div class="form-group"><label>السعر القديم</label><input type="number" id="offer-oldprice" min="0"></div>
         </div>
-        <div class="form-group"><label>رابط الصورة</label><input type="text" id="offer-image"></div>
+        <div class="form-group">
+                    <label>الصورة</label>
+                    <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">
+                      <label style="flex:1;cursor:pointer">
+                        <input type="file" id="offer-image-file" accept="image/*" style="display:none">
+                        <div style="padding:12px;border:2px dashed var(--gray-dark);border-radius:10px;text-align:center;color:var(--gray);font-size:13px">
+                          <i class="fas fa-camera" style="display:block;font-size:24px;color:var(--gold);margin-bottom:6px"></i>
+                          اضغط لرفع صورة من الجوال
+                        </div>
+                      </label>
+                    </div>
+                    <input type="text" id="offer-image" placeholder="أو أدخل رابط URL للصورة" style="margin-bottom:8px">
+                    <img id="offer-preview" style="max-width:120px;max-height:120px;border-radius:10px;display:none;border:2px solid var(--gold)">
+                  </div>
         <div class="form-group"><label class="toggle-wrap"><div class="toggle active" id="offer-active-toggle" onclick="this.classList.toggle('active')"></div><span>عرض نشط</span></label></div>
       </div>
       <div class="modal-footer"><button class="btn btn-dark" onclick="closeOfferModal()">إلغاء</button><button class="btn btn-gold" onclick="saveOffer()"><i class="fas fa-save"></i> حفظ</button></div>

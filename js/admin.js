@@ -1,10 +1,11 @@
 // ═══════════════════════════════════════════
-//  مطعم القيصر - لوحة التحكم
+//  مطعم القيصر - لوحة التحكم v3.0
+//  + Image upload from phone (Base64)
 // ═══════════════════════════════════════════
 
 const DB = {
   get(k, d) { try { let v = localStorage.getItem('alqaysar_' + k); return v ? JSON.parse(v) : d; } catch(e) { return d; } },
-  set(k, v) { localStorage.setItem('alqaysar_' + k, JSON.stringify(v)); }
+  set(k, v) { try { localStorage.setItem('alqaysar_' + k, JSON.stringify(v)); } catch(e) { toast('خطأ في الحفظ: ' + e.message, 'error'); } }
 };
 
 // ===== AUTH =====
@@ -32,6 +33,7 @@ function checkAuth() {
 // ===== TOAST =====
 function toast(m, t) {
   let c = document.getElementById('toastContainer');
+  if (!c) return;
   let d = document.createElement('div');
   d.className = 'toast ' + (t || 'success');
   let i = t === 'error' ? 'fa-exclamation-circle' : t === 'info' ? 'fa-info-circle' : 'fa-check-circle';
@@ -43,41 +45,80 @@ function toast(m, t) {
 // ===== SECTIONS =====
 function showSection(id, el) {
   document.querySelectorAll('.section-content').forEach(s => s.style.display = 'none');
-  document.getElementById(id + '-section').style.display = 'block';
+  let sec = document.getElementById(id + '-section');
+  if (sec) sec.style.display = 'block';
   document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
   if (el) el.classList.add('active');
   let T = { dashboard: 'لوحة التحكم', menu: 'إدارة القائمة', categories: 'التصنيفات', offers: 'العروض', zones: 'المناطق والتوصيل', settings: 'إعدادات الموقع' };
-  document.getElementById('page-title').innerHTML = '<i class="fas ' + (el ? el.querySelector('i').className.replace('fas ', '') : 'fa-tachometer-alt') + '"></i> ' + T[id];
+  let pt = document.getElementById('page-title');
+  if (pt) pt.innerHTML = '<i class="fas ' + (el ? el.querySelector('i').className.replace('fas ', '') : 'fa-tachometer-alt') + '"></i> ' + T[id];
   if (id === 'menu') renderMenuTable();
   if (id === 'categories') renderCategoriesTable();
   if (id === 'offers') renderOffersTable();
   if (id === 'zones') renderZonesTable();
   if (id === 'settings') loadSettings();
-  if (window.innerWidth < 768) document.getElementById('sidebar').classList.remove('open');
+  if (window.innerWidth < 768) {
+    let sb = document.getElementById('sidebar');
+    if (sb) sb.classList.remove('open');
+  }
 }
-function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+function toggleSidebar() {
+  let sb = document.getElementById('sidebar');
+  if (sb) sb.classList.toggle('open');
+}
 function showTab(t, b) {
   document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(x => x.classList.remove('active'));
-  document.getElementById('tab-' + t).classList.add('active');
-  b.classList.add('active');
+  let tc = document.getElementById('tab-' + t);
+  if (tc) tc.classList.add('active');
+  if (b) b.classList.add('active');
 }
 
 // ===== INIT =====
 function initAdmin() { updateStats(); renderMenuTable(); }
 function updateStats() {
-  document.getElementById('stat-items').textContent = DB.get('menu', []).length;
-  document.getElementById('stat-cats').textContent = DB.get('categories', []).length;
-  document.getElementById('stat-offers').textContent = DB.get('offers', []).length;
-  document.getElementById('stat-zones').textContent = DB.get('zones', []).length;
+  let el1 = document.getElementById('stat-items');
+  let el2 = document.getElementById('stat-cats');
+  let el3 = document.getElementById('stat-offers');
+  let el4 = document.getElementById('stat-zones');
+  if (el1) el1.textContent = DB.get('menu', []).length;
+  if (el2) el2.textContent = DB.get('categories', []).length;
+  if (el3) el3.textContent = DB.get('offers', []).length;
+  if (el4) el4.textContent = DB.get('zones', []).length;
+}
+
+// ===== IMAGE UPLOAD (Base64 from phone) =====
+function handleImageUpload(inputId, previewId, urlInputId) {
+  let input = document.getElementById(inputId);
+  if (!input) return;
+  input.addEventListener('change', function(e) {
+    let file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) { toast('الصورة كبيرة جداً (الحد 2MB)', 'error'); return; }
+    let reader = new FileReader();
+    reader.onload = function(ev) {
+      let base64 = ev.target.result;
+      let preview = document.getElementById(previewId);
+      if (preview) { preview.src = base64; preview.style.display = 'block'; }
+      let urlInput = document.getElementById(urlInputId);
+      if (urlInput) urlInput.value = base64;
+      toast('تم تحميل الصورة من الجوال');
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 // ===== MENU CRUD =====
 function renderMenuTable() {
-  let items = DB.get('menu', []), search = document.getElementById('menuSearch').value.toLowerCase();
+  let items = DB.get('menu', []);
+  let searchEl = document.getElementById('menuSearch');
+  let search = searchEl ? searchEl.value.toLowerCase() : '';
   let filtered = items.filter(i => i.name.toLowerCase().includes(search));
-  let cats = DB.get('categories', []), tbody = document.getElementById('menuTableBody');
-  document.getElementById('menuEmpty').style.display = filtered.length ? 'none' : 'block';
+  let cats = DB.get('categories', []);
+  let tbody = document.getElementById('menuTableBody');
+  let empty = document.getElementById('menuEmpty');
+  if (empty) empty.style.display = filtered.length ? 'none' : 'block';
+  if (!tbody) return;
   tbody.innerHTML = filtered.map((item, idx) => {
     let cat = cats.find(c => c.id == item.category);
     return '<tr><td>' + (idx + 1) + '</td>' +
@@ -97,11 +138,17 @@ function openItemModal() {
   document.getElementById('item-price').value = '';
   document.getElementById('item-desc').value = '';
   document.getElementById('item-image').value = '';
-  document.getElementById('item-active-toggle').classList.add('active');
-  document.getElementById('itemModalTitle').innerHTML = '<i class="fas fa-plus"></i> إضافة صنف جديد';
+  let preview = document.getElementById('item-preview');
+  if (preview) { preview.src = ''; preview.style.display = 'none'; }
+  let toggle = document.getElementById('item-active-toggle');
+  if (toggle) toggle.classList.add('active');
+  let title = document.getElementById('itemModalTitle');
+  if (title) title.innerHTML = '<i class="fas fa-plus"></i> إضافة صنف جديد';
   populateCats();
-  document.getElementById('itemModal').classList.add('active');
+  let modal = document.getElementById('itemModal');
+  if (modal) modal.classList.add('active');
 }
+
 function editItem(id) {
   let item = DB.get('menu', []).find(i => i.id === id);
   if (!item) return;
@@ -110,34 +157,77 @@ function editItem(id) {
   document.getElementById('item-price').value = item.price;
   document.getElementById('item-desc').value = item.desc || '';
   document.getElementById('item-image').value = item.image || '';
-  document.getElementById('item-active-toggle').classList.toggle('active', item.active);
-  document.getElementById('itemModalTitle').innerHTML = '<i class="fas fa-edit"></i> تعديل صنف';
+  let preview = document.getElementById('item-preview');
+  if (preview) {
+    if (item.image) { preview.src = item.image; preview.style.display = 'block'; }
+    else { preview.src = ''; preview.style.display = 'none'; }
+  }
+  let toggle = document.getElementById('item-active-toggle');
+  if (toggle) toggle.classList.toggle('active', item.active !== false);
+  let title = document.getElementById('itemModalTitle');
+  if (title) title.innerHTML = '<i class="fas fa-edit"></i> تعديل صنف';
   populateCats(item.category);
-  document.getElementById('itemModal').classList.add('active');
+  let modal = document.getElementById('itemModal');
+  if (modal) modal.classList.add('active');
 }
+
 function saveItem() {
   let id = document.getElementById('item-id').value;
   let name = document.getElementById('item-name').value.trim();
   let price = parseFloat(document.getElementById('item-price').value);
   let category = document.getElementById('item-category').value;
-  if (!name || !price || !category) { toast('يرجى ملء جميع الحقول المطلوبة', 'error'); return; }
+  if (!name || isNaN(price) || !category) { toast('يرجى ملء جميع الحقول المطلوبة', 'error'); return; }
   let items = DB.get('menu', []);
-  let data = { id: id ? parseInt(id) : Date.now(), name, price, category: parseInt(category), desc: document.getElementById('item-desc').value.trim(), image: document.getElementById('item-image').value.trim(), active: document.getElementById('item-active-toggle').classList.contains('active') };
-  if (id) { let idx = items.findIndex(i => i.id === parseInt(id)); if (idx > -1) items[idx] = data; }
-  else items.push(data);
+  let data = {
+    id: id ? parseInt(id) : Date.now(),
+    name: name,
+    price: price,
+    category: parseInt(category),
+    desc: document.getElementById('item-desc').value.trim(),
+    image: document.getElementById('item-image').value.trim(),
+    active: document.getElementById('item-active-toggle').classList.contains('active')
+  };
+  if (id) {
+    let idx = items.findIndex(i => i.id === parseInt(id));
+    if (idx > -1) items[idx] = data;
+    else items.push(data);
+  } else {
+    items.push(data);
+  }
   DB.set('menu', items);
-  closeItemModal(); renderMenuTable(); updateStats(); toast('تم حفظ الصنف');
+  closeItemModal();
+  renderMenuTable();
+  updateStats();
+  toast('تم حفظ الصنف بنجاح');
 }
-function deleteItem(id) { if (!confirm('هل أنت متأكد من حذف هذا الصنف؟')) return; DB.set('menu', DB.get('menu', []).filter(i => i.id !== id)); renderMenuTable(); updateStats(); toast('تم الحذف'); }
-function closeItemModal() { document.getElementById('itemModal').classList.remove('active'); }
+
+function deleteItem(id) {
+  if (!confirm('هل أنت متأكد من حذف هذا الصنف؟')) return;
+  DB.set('menu', DB.get('menu', []).filter(i => i.id !== id));
+  renderMenuTable();
+  updateStats();
+  toast('تم الحذف');
+}
+
+function closeItemModal() {
+  let modal = document.getElementById('itemModal');
+  if (modal) modal.classList.remove('active');
+}
+
 function populateCats(sel) {
-  let cats = DB.get('categories', []), s = document.getElementById('item-category');
-  s.innerHTML = '<option value="">اختر التصنيف</option>' + cats.map(c => '<option value="' + c.id + '"' + (c.id == sel ? ' selected' : '') + '>' + c.name + '</option>').join('');
+  let cats = DB.get('categories', []);
+  let s = document.getElementById('item-category');
+  if (!s) return;
+  s.innerHTML = '<option value="">اختر التصنيف</option>' +
+    cats.map(c => '<option value="' + c.id + '"' + (c.id == sel ? ' selected' : '') + '>' + c.name + '</option>').join('');
 }
 
 // ===== CATEGORIES CRUD =====
 function renderCategoriesTable() {
-  let cats = DB.get('categories', []), items = DB.get('menu', []), tbody = document.getElementById('categoriesTableBody');
+  let cats = DB.get('categories', []);
+  let items = DB.get('menu', []);
+  let tbody = document.getElementById('categoriesTableBody');
+  if (!tbody) return;
   tbody.innerHTML = cats.map((c, idx) => {
     let count = items.filter(i => i.category == c.id).length;
     return '<tr><td>' + (idx + 1) + '</td><td><strong>' + c.name + '</strong></td><td><i class="fas ' + (c.icon || 'fa-tag') + '"></i></td><td>' + count + '</td>' +
@@ -145,16 +235,69 @@ function renderCategoriesTable() {
       '<button class="btn btn-danger btn-sm" onclick="deleteCategory(' + c.id + ')"><i class="fas fa-trash"></i></button></td></tr>';
   }).join('');
 }
-function openCategoryModal() { document.getElementById('cat-id').value = ''; document.getElementById('cat-name').value = ''; document.getElementById('cat-icon').value = ''; document.getElementById('catModalTitle').innerHTML = '<i class="fas fa-plus"></i> إضافة تصنيف'; document.getElementById('categoryModal').classList.add('active'); }
-function editCategory(id) { let cat = DB.get('categories', []).find(c => c.id === id); if (!cat) return; document.getElementById('cat-id').value = cat.id; document.getElementById('cat-name').value = cat.name; document.getElementById('cat-icon').value = cat.icon || ''; document.getElementById('catModalTitle').innerHTML = '<i class="fas fa-edit"></i> تعديل تصنيف'; document.getElementById('categoryModal').classList.add('active'); }
-function saveCategory() { let id = document.getElementById('cat-id').value, name = document.getElementById('cat-name').value.trim(); if (!name) { toast('يرجى إدخال اسم التصنيف', 'error'); return; } let cats = DB.get('categories', []), data = { id: id ? parseInt(id) : Date.now(), name, icon: document.getElementById('cat-icon').value.trim() || 'fa-tag' }; if (id) { let idx = cats.findIndex(c => c.id === parseInt(id)); if (idx > -1) cats[idx] = data; } else cats.push(data); DB.set('categories', cats); closeCategoryModal(); renderCategoriesTable(); updateStats(); toast('تم حفظ التصنيف'); }
-function deleteCategory(id) { if (!confirm('هل أنت متأكد؟')) return; DB.set('categories', DB.get('categories', []).filter(c => c.id !== id)); renderCategoriesTable(); updateStats(); toast('تم الحذف'); }
-function closeCategoryModal() { document.getElementById('categoryModal').classList.remove('active'); }
+
+function openCategoryModal() {
+  document.getElementById('cat-id').value = '';
+  document.getElementById('cat-name').value = '';
+  document.getElementById('cat-icon').value = '';
+  let title = document.getElementById('catModalTitle');
+  if (title) title.innerHTML = '<i class="fas fa-plus"></i> إضافة تصنيف';
+  let modal = document.getElementById('categoryModal');
+  if (modal) modal.classList.add('active');
+}
+
+function editCategory(id) {
+  let cat = DB.get('categories', []).find(c => c.id === id);
+  if (!cat) return;
+  document.getElementById('cat-id').value = cat.id;
+  document.getElementById('cat-name').value = cat.name;
+  document.getElementById('cat-icon').value = cat.icon || '';
+  let title = document.getElementById('catModalTitle');
+  if (title) title.innerHTML = '<i class="fas fa-edit"></i> تعديل تصنيف';
+  let modal = document.getElementById('categoryModal');
+  if (modal) modal.classList.add('active');
+}
+
+function saveCategory() {
+  let id = document.getElementById('cat-id').value;
+  let name = document.getElementById('cat-name').value.trim();
+  if (!name) { toast('يرجى إدخال اسم التصنيف', 'error'); return; }
+  let cats = DB.get('categories', []);
+  let data = { id: id ? parseInt(id) : Date.now(), name: name, icon: document.getElementById('cat-icon').value.trim() || 'fa-tag' };
+  if (id) {
+    let idx = cats.findIndex(c => c.id === parseInt(id));
+    if (idx > -1) cats[idx] = data;
+    else cats.push(data);
+  } else {
+    cats.push(data);
+  }
+  DB.set('categories', cats);
+  closeCategoryModal();
+  renderCategoriesTable();
+  updateStats();
+  toast('تم حفظ التصنيف');
+}
+
+function deleteCategory(id) {
+  if (!confirm('هل أنت متأكد؟')) return;
+  DB.set('categories', DB.get('categories', []).filter(c => c.id !== id));
+  renderCategoriesTable();
+  updateStats();
+  toast('تم الحذف');
+}
+
+function closeCategoryModal() {
+  let modal = document.getElementById('categoryModal');
+  if (modal) modal.classList.remove('active');
+}
 
 // ===== OFFERS CRUD =====
 function renderOffersTable() {
-  let offers = DB.get('offers', []), tbody = document.getElementById('offersTableBody');
-  document.getElementById('offersEmpty').style.display = offers.length ? 'none' : 'block';
+  let offers = DB.get('offers', []);
+  let tbody = document.getElementById('offersTableBody');
+  let empty = document.getElementById('offersEmpty');
+  if (empty) empty.style.display = offers.length ? 'none' : 'block';
+  if (!tbody) return;
   tbody.innerHTML = offers.map((o, idx) => '<tr><td>' + (idx + 1) + '</td>' +
     '<td><div class="item-img">' + (o.image ? '<img src="' + o.image + '" style="width:40px;height:40px;object-fit:cover;border-radius:8px">' : '<i class="fas fa-image"></i>') + '</div></td>' +
     '<td><strong>' + o.title + '</strong></td>' +
@@ -163,22 +306,103 @@ function renderOffersTable() {
     '<td><button class="btn btn-dark btn-sm" onclick="editOffer(' + o.id + ')"><i class="fas fa-edit"></i></button> ' +
     '<button class="btn btn-danger btn-sm" onclick="deleteOffer(' + o.id + ')"><i class="fas fa-trash"></i></button></td></tr>').join('');
 }
-function openOfferModal() { document.getElementById('offer-id').value = ''; document.getElementById('offer-title').value = ''; document.getElementById('offer-desc').value = ''; document.getElementById('offer-price').value = ''; document.getElementById('offer-oldprice').value = ''; document.getElementById('offer-image').value = ''; document.getElementById('offer-active-toggle').classList.add('active'); document.getElementById('offerModalTitle').innerHTML = '<i class="fas fa-plus"></i> إضافة عرض'; document.getElementById('offerModal').classList.add('active'); }
-function editOffer(id) { let o = DB.get('offers', []).find(x => x.id === id); if (!o) return; document.getElementById('offer-id').value = o.id; document.getElementById('offer-title').value = o.title; document.getElementById('offer-desc').value = o.desc || ''; document.getElementById('offer-price').value = o.price; document.getElementById('offer-oldprice').value = o.oldPrice || ''; document.getElementById('offer-image').value = o.image || ''; document.getElementById('offer-active-toggle').classList.toggle('active', o.active); document.getElementById('offerModalTitle').innerHTML = '<i class="fas fa-edit"></i> تعديل عرض'; document.getElementById('offerModal').classList.add('active'); }
-function saveOffer() { let id = document.getElementById('offer-id').value, title = document.getElementById('offer-title').value.trim(), price = parseFloat(document.getElementById('offer-price').value); if (!title || !price) { toast('يرجى ملء الحقول المطلوبة', 'error'); return; } let offers = DB.get('offers', []), data = { id: id ? parseInt(id) : Date.now(), title, price, desc: document.getElementById('offer-desc').value.trim(), oldPrice: parseFloat(document.getElementById('offer-oldprice').value) || 0, image: document.getElementById('offer-image').value.trim(), active: document.getElementById('offer-active-toggle').classList.contains('active') }; if (id) { let idx = offers.findIndex(o => o.id === parseInt(id)); if (idx > -1) offers[idx] = data; } else offers.push(data); DB.set('offers', offers); closeOfferModal(); renderOffersTable(); updateStats(); toast('تم حفظ العرض'); }
-function deleteOffer(id) { if (!confirm('هل أنت متأكد؟')) return; DB.set('offers', DB.get('offers', []).filter(o => o.id !== id)); renderOffersTable(); updateStats(); toast('تم الحذف'); }
-function closeOfferModal() { document.getElementById('offerModal').classList.remove('active'); }
+
+function openOfferModal() {
+  document.getElementById('offer-id').value = '';
+  document.getElementById('offer-title').value = '';
+  document.getElementById('offer-desc').value = '';
+  document.getElementById('offer-price').value = '';
+  document.getElementById('offer-oldprice').value = '';
+  document.getElementById('offer-image').value = '';
+  let preview = document.getElementById('offer-preview');
+  if (preview) { preview.src = ''; preview.style.display = 'none'; }
+  let toggle = document.getElementById('offer-active-toggle');
+  if (toggle) toggle.classList.add('active');
+  let title = document.getElementById('offerModalTitle');
+  if (title) title.innerHTML = '<i class="fas fa-plus"></i> إضافة عرض';
+  let modal = document.getElementById('offerModal');
+  if (modal) modal.classList.add('active');
+}
+
+function editOffer(id) {
+  let o = DB.get('offers', []).find(x => x.id === id);
+  if (!o) return;
+  document.getElementById('offer-id').value = o.id;
+  document.getElementById('offer-title').value = o.title;
+  document.getElementById('offer-desc').value = o.desc || '';
+  document.getElementById('offer-price').value = o.price;
+  document.getElementById('offer-oldprice').value = o.oldPrice || '';
+  document.getElementById('offer-image').value = o.image || '';
+  let preview = document.getElementById('offer-preview');
+  if (preview) {
+    if (o.image) { preview.src = o.image; preview.style.display = 'block'; }
+    else { preview.src = ''; preview.style.display = 'none'; }
+  }
+  let toggle = document.getElementById('offer-active-toggle');
+  if (toggle) toggle.classList.toggle('active', o.active !== false);
+  let title = document.getElementById('offerModalTitle');
+  if (title) title.innerHTML = '<i class="fas fa-edit"></i> تعديل عرض';
+  let modal = document.getElementById('offerModal');
+  if (modal) modal.classList.add('active');
+}
+
+function saveOffer() {
+  let id = document.getElementById('offer-id').value;
+  let title = document.getElementById('offer-title').value.trim();
+  let price = parseFloat(document.getElementById('offer-price').value);
+  if (!title || isNaN(price)) { toast('يرجى ملء الحقول المطلوبة', 'error'); return; }
+  let offers = DB.get('offers', []);
+  let data = {
+    id: id ? parseInt(id) : Date.now(),
+    title: title,
+    price: price,
+    desc: document.getElementById('offer-desc').value.trim(),
+    oldPrice: parseFloat(document.getElementById('offer-oldprice').value) || 0,
+    image: document.getElementById('offer-image').value.trim(),
+    active: document.getElementById('offer-active-toggle').classList.contains('active')
+  };
+  if (id) {
+    let idx = offers.findIndex(o => o.id === parseInt(id));
+    if (idx > -1) offers[idx] = data;
+    else offers.push(data);
+  } else {
+    offers.push(data);
+  }
+  DB.set('offers', offers);
+  closeOfferModal();
+  renderOffersTable();
+  updateStats();
+  toast('تم حفظ العرض');
+}
+
+function deleteOffer(id) {
+  if (!confirm('هل أنت متأكد؟')) return;
+  DB.set('offers', DB.get('offers', []).filter(o => o.id !== id));
+  renderOffersTable();
+  updateStats();
+  toast('تم الحذف');
+}
+
+function closeOfferModal() {
+  let modal = document.getElementById('offerModal');
+  if (modal) modal.classList.remove('active');
+}
 
 // ===== ZONES CRUD =====
 function renderZonesTable() {
-  let zones = DB.get('zones', []), s = DB.get('settings', {});
-  document.getElementById('deliveryToggleBtn').classList.toggle('active', s.deliveryEnabled !== false);
-  document.getElementById('deliveryStatusText').textContent = (s.deliveryEnabled !== false) ? 'التوصيل مفعل ✅' : 'التوصيل معطل ❌';
+  let zones = DB.get('zones', []);
+  let s = DB.get('settings', {});
+  let toggle = document.getElementById('deliveryToggleBtn');
+  let status = document.getElementById('deliveryStatusText');
+  if (toggle) toggle.classList.toggle('active', s.deliveryEnabled !== false);
+  if (status) status.textContent = (s.deliveryEnabled !== false) ? 'التوصيل مفعل ✅' : 'التوصيل معطل ❌';
   let tbody = document.getElementById('zonesTableBody');
+  if (!tbody) return;
   tbody.innerHTML = zones.map((z, idx) => '<tr><td>' + (idx + 1) + '</td><td><strong>' + z.name + '</strong></td><td>' + z.fee.toLocaleString('ar-SY') + ' ل.س</td>' +
     '<td><button class="btn btn-dark btn-sm" onclick="editZone(' + z.id + ')"><i class="fas fa-edit"></i></button> ' +
     '<button class="btn btn-danger btn-sm" onclick="deleteZone(' + z.id + ')"><i class="fas fa-trash"></i></button></td></tr>').join('');
 }
+
 function toggleDelivery() {
   let s = DB.get('settings', {});
   s.deliveryEnabled = !(s.deliveryEnabled !== false);
@@ -186,72 +410,178 @@ function toggleDelivery() {
   renderZonesTable();
   toast(s.deliveryEnabled ? 'تم تفعيل التوصيل' : 'تم إيقاف التوصيل');
 }
-function openZoneModal() { document.getElementById('zone-id').value = ''; document.getElementById('zone-name').value = ''; document.getElementById('zone-fee').value = ''; document.getElementById('zoneModalTitle').innerHTML = '<i class="fas fa-plus"></i> إضافة منطقة'; document.getElementById('zoneModal').classList.add('active'); }
-function editZone(id) { let z = DB.get('zones', []).find(x => x.id === id); if (!z) return; document.getElementById('zone-id').value = z.id; document.getElementById('zone-name').value = z.name; document.getElementById('zone-fee').value = z.fee; document.getElementById('zoneModalTitle').innerHTML = '<i class="fas fa-edit"></i> تعديل منطقة'; document.getElementById('zoneModal').classList.add('active'); }
-function saveZone() { let id = document.getElementById('zone-id').value, name = document.getElementById('zone-name').value.trim(), fee = parseFloat(document.getElementById('zone-fee').value); if (!name || isNaN(fee)) { toast('يرجى ملء جميع الحقول', 'error'); return; } let zones = DB.get('zones', []), data = { id: id ? parseInt(id) : Date.now(), name, fee }; if (id) { let idx = zones.findIndex(z => z.id === parseInt(id)); if (idx > -1) zones[idx] = data; } else zones.push(data); DB.set('zones', zones); closeZoneModal(); renderZonesTable(); updateStats(); toast('تم حفظ المنطقة'); }
-function deleteZone(id) { if (!confirm('هل أنت متأكد؟')) return; DB.set('zones', DB.get('zones', []).filter(z => z.id !== id)); renderZonesTable(); updateStats(); toast('تم الحذف'); }
-function closeZoneModal() { document.getElementById('zoneModal').classList.remove('active'); }
+
+function openZoneModal() {
+  document.getElementById('zone-id').value = '';
+  document.getElementById('zone-name').value = '';
+  document.getElementById('zone-fee').value = '';
+  let title = document.getElementById('zoneModalTitle');
+  if (title) title.innerHTML = '<i class="fas fa-plus"></i> إضافة منطقة';
+  let modal = document.getElementById('zoneModal');
+  if (modal) modal.classList.add('active');
+}
+
+function editZone(id) {
+  let z = DB.get('zones', []).find(x => x.id === id);
+  if (!z) return;
+  document.getElementById('zone-id').value = z.id;
+  document.getElementById('zone-name').value = z.name;
+  document.getElementById('zone-fee').value = z.fee;
+  let title = document.getElementById('zoneModalTitle');
+  if (title) title.innerHTML = '<i class="fas fa-edit"></i> تعديل منطقة';
+  let modal = document.getElementById('zoneModal');
+  if (modal) modal.classList.add('active');
+}
+
+function saveZone() {
+  let id = document.getElementById('zone-id').value;
+  let name = document.getElementById('zone-name').value.trim();
+  let fee = parseFloat(document.getElementById('zone-fee').value);
+  if (!name || isNaN(fee)) { toast('يرجى ملء جميع الحقول', 'error'); return; }
+  let zones = DB.get('zones', []);
+  let data = { id: id ? parseInt(id) : Date.now(), name: name, fee: fee };
+  if (id) {
+    let idx = zones.findIndex(z => z.id === parseInt(id));
+    if (idx > -1) zones[idx] = data;
+    else zones.push(data);
+  } else {
+    zones.push(data);
+  }
+  DB.set('zones', zones);
+  closeZoneModal();
+  renderZonesTable();
+  updateStats();
+  toast('تم حفظ المنطقة');
+}
+
+function deleteZone(id) {
+  if (!confirm('هل أنت متأكد؟')) return;
+  DB.set('zones', DB.get('zones', []).filter(z => z.id !== id));
+  renderZonesTable();
+  updateStats();
+  toast('تم الحذف');
+}
+
+function closeZoneModal() {
+  let modal = document.getElementById('zoneModal');
+  if (modal) modal.classList.remove('active');
+}
 
 // ===== SETTINGS =====
 function loadSettings() {
   let s = DB.get('settings', {});
-  document.getElementById('site-name').value = s.name || '';
-  document.getElementById('site-subtitle').value = s.subtitle || '';
-  document.getElementById('site-desc').value = s.desc || '';
-  document.getElementById('site-alert').value = s.alertText || '';
-  document.getElementById('site-address').value = s.address || '';
-  document.getElementById('site-hours').value = s.hours || '';
-  document.getElementById('site-phone').value = s.phone || '';
-  document.getElementById('site-whatsapp').value = s.whatsapp || '';
-  document.getElementById('site-phone2').value = s.phone2 || '';
-  document.getElementById('site-email').value = s.email || '';
-  document.getElementById('social-facebook').value = s.facebook || '';
-  document.getElementById('social-instagram').value = s.instagram || '';
-  document.getElementById('social-twitter').value = s.twitter || '';
-  document.getElementById('social-tiktok').value = s.tiktok || '';
-  document.getElementById('social-snapchat').value = s.snapchat || '';
-  document.getElementById('social-youtube').value = s.youtube || '';
+  let setVal = (id, val) => { let el = document.getElementById(id); if (el) el.value = val || ''; };
+  setVal('site-name', s.name);
+  setVal('site-subtitle', s.subtitle);
+  setVal('site-desc', s.desc);
+  setVal('site-alert', s.alertText);
+  setVal('site-address', s.address);
+  setVal('site-hours', s.hours);
+  setVal('site-phone', s.phone);
+  setVal('site-whatsapp', s.whatsapp);
+  setVal('site-phone2', s.phone2);
+  setVal('site-email', s.email);
+  setVal('social-facebook', s.facebook);
+  setVal('social-instagram', s.instagram);
+  setVal('social-twitter', s.twitter);
+  setVal('social-tiktok', s.tiktok);
+  setVal('social-snapchat', s.snapchat);
+  setVal('social-youtube', s.youtube);
 }
+
 function saveSettings() {
   let s = DB.get('settings', {});
-  s.name = document.getElementById('site-name').value.trim();
-  s.subtitle = document.getElementById('site-subtitle').value.trim();
-  s.desc = document.getElementById('site-desc').value.trim();
-  s.alertText = document.getElementById('site-alert').value.trim();
-  s.address = document.getElementById('site-address').value.trim();
-  s.hours = document.getElementById('site-hours').value.trim();
-  s.phone = document.getElementById('site-phone').value.trim();
-  s.whatsapp = document.getElementById('site-whatsapp').value.trim();
-  s.phone2 = document.getElementById('site-phone2').value.trim();
-  s.email = document.getElementById('site-email').value.trim();
-  s.facebook = document.getElementById('social-facebook').value.trim();
-  s.instagram = document.getElementById('social-instagram').value.trim();
-  s.twitter = document.getElementById('social-twitter').value.trim();
-  s.tiktok = document.getElementById('social-tiktok').value.trim();
-  s.snapchat = document.getElementById('social-snapchat').value.trim();
-  s.youtube = document.getElementById('social-youtube').value.trim();
-  let np = document.getElementById('new-password').value, cp = document.getElementById('confirm-password').value;
-  if (np) { if (np !== cp) { toast('كلمتا المرور غير متطابقتين', 'error'); return; } DB.set('password', np); document.getElementById('new-password').value = ''; document.getElementById('confirm-password').value = ''; }
-  DB.set('settings', s); toast('تم حفظ الإعدادات');
+  let getVal = (id) => { let el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  s.name = getVal('site-name');
+  s.subtitle = getVal('site-subtitle');
+  s.desc = getVal('site-desc');
+  s.alertText = getVal('site-alert');
+  s.address = getVal('site-address');
+  s.hours = getVal('site-hours');
+  s.phone = getVal('site-phone');
+  s.whatsapp = getVal('site-whatsapp');
+  s.phone2 = getVal('site-phone2');
+  s.email = getVal('site-email');
+  s.facebook = getVal('social-facebook');
+  s.instagram = getVal('social-instagram');
+  s.twitter = getVal('social-twitter');
+  s.tiktok = getVal('social-tiktok');
+  s.snapchat = getVal('social-snapchat');
+  s.youtube = getVal('social-youtube');
+  let np = document.getElementById('new-password').value;
+  let cp = document.getElementById('confirm-password').value;
+  if (np) {
+    if (np !== cp) { toast('كلمتا المرور غير متطابقتين', 'error'); return; }
+    DB.set('password', np);
+    document.getElementById('new-password').value = '';
+    document.getElementById('confirm-password').value = '';
+  }
+  DB.set('settings', s);
+  toast('تم حفظ الإعدادات');
 }
 
 // ===== EXPORT / IMPORT / RESET =====
 function exportData() {
   let data = { categories: DB.get('categories', []), menu: DB.get('menu', []), offers: DB.get('offers', []), zones: DB.get('zones', []), settings: DB.get('settings', {}), password: DB.get('password', 'admin123') };
-  let blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), url = URL.createObjectURL(blob), a = document.createElement('a');
-  a.href = url; a.download = 'alqaysar-backup-' + new Date().toISOString().slice(0, 10) + '.json'; a.click(); URL.revokeObjectURL(url); toast('تم تصدير البيانات');
+  let blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  let url = URL.createObjectURL(blob);
+  let a = document.createElement('a');
+  a.href = url;
+  a.download = 'alqaysar-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('تم تصدير البيانات');
 }
+
 function importData() {
-  let input = document.createElement('input'); input.type = 'file'; input.accept = '.json';
+  let input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
   input.onchange = (e) => {
-    let file = e.target.files[0]; if (!file) return;
+    let file = e.target.files[0];
+    if (!file) return;
     let reader = new FileReader();
-    reader.onload = (ev) => { try { let data = JSON.parse(ev.target.result); if (data.categories) DB.set('categories', data.categories); if (data.menu) DB.set('menu', data.menu); if (data.offers) DB.set('offers', data.offers); if (data.zones) DB.set('zones', data.zones); if (data.settings) DB.set('settings', data.settings); if (data.password) DB.set('password', data.password); toast('تم استيراد البيانات'); updateStats(); renderMenuTable(); renderCategoriesTable(); renderOffersTable(); renderZonesTable(); } catch (err) { toast('ملف غير صالح', 'error'); } };
+    reader.onload = (ev) => {
+      try {
+        let data = JSON.parse(ev.target.result);
+        if (data.categories) DB.set('categories', data.categories);
+        if (data.menu) DB.set('menu', data.menu);
+        if (data.offers) DB.set('offers', data.offers);
+        if (data.zones) DB.set('zones', data.zones);
+        if (data.settings) DB.set('settings', data.settings);
+        if (data.password) DB.set('password', data.password);
+        toast('تم استيراد البيانات');
+        updateStats();
+        renderMenuTable();
+        renderCategoriesTable();
+        renderOffersTable();
+        renderZonesTable();
+      } catch (err) { toast('ملف غير صالح', 'error'); }
+    };
     reader.readAsText(file);
-  }; input.click();
+  };
+  input.click();
 }
-function resetData() { if (!confirm('هل أنت متأكد؟ سيتم حذف جميع البيانات!')) return; localStorage.removeItem('alqaysar_initialized'); ['categories', 'menu', 'offers', 'zones', 'settings', 'password', 'visits', 'cart'].forEach(k => localStorage.removeItem('alqaysar_' + k)); toast('تم إعادة التعيين'); setTimeout(() => location.reload(), 1500); }
+
+function resetData() {
+  if (!confirm('هل أنت متأكد؟ سيتم حذف جميع البيانات!')) return;
+  localStorage.removeItem('alqaysar_initialized');
+  ['categories', 'menu', 'offers', 'zones', 'settings', 'password', 'visits', 'cart'].forEach(k => localStorage.removeItem('alqaysar_' + k));
+  toast('تم إعادة التعيين');
+  setTimeout(() => location.reload(), 1500);
+}
+
+// ===== INIT IMAGE UPLOADS =====
+document.addEventListener('DOMContentLoaded', function() {
+  checkAuth();
+  // Setup image upload handlers
+  handleImageUpload('item-image-file', 'item-preview', 'item-image');
+  handleImageUpload('offer-image-file', 'offer-preview', 'offer-image');
+});
 
 // Close modals on overlay click
-document.addEventListener('click', (e) => { if (e.target.classList.contains('modal-overlay')) { e.target.classList.remove('active'); } });
-document.addEventListener('DOMContentLoaded', checkAuth);
+document.addEventListener('click', (e) => {
+  if (e.target.classList.contains('modal-overlay')) {
+    e.target.classList.remove('active');
+  }
+});

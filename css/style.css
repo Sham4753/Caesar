@@ -571,3 +571,41 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   .menu-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
   .modal-sheet { border-radius: var(--radius); max-height: 80vh; margin: auto 0; }
 }
+
+
+/* ===== IMAGE UPLOAD STYLES ===== */
+.image-upload-btn {
+  display: block;
+  width: 100%;
+  padding: 16px;
+  border: 2px dashed var(--gray-dark);
+  border-radius: var(--radius-sm);
+  text-align: center;
+  color: var(--gray);
+  font-size: 13px;
+  cursor: pointer;
+  transition: var(--transition);
+  background: var(--black);
+}
+.image-upload-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(212,175,55,0.05);
+}
+.image-upload-btn i {
+  display: block;
+  font-size: 28px;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+.image-preview-admin {
+  max-width: 120px;
+  max-height: 120px;
+  border-radius: 10px;
+  display: none;
+  border: 2px solid var(--gold);
+  margin-top: 10px;
+}
+.image-preview-admin.visible {
+  display: block;
+}
