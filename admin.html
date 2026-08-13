@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - مطعم القيصر</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #e67e22; --primary-dark: #d35400; --secondary: #2c3e50;
+            --success: #27ae60; --danger: #e74c3c; --warning: #f39c12;
+            --info: #3498db; --light: #f8f9fa; --dark: #1a1a2e;
+            --sidebar: #1e272e; --sidebar-hover: #2d3436;
+        }
+        body { font-family: 'Tajawal', sans-serif; background: #f0f2f5; color: var(--dark); min-height: 100vh; }
+        .login-screen {
+            position: fixed; inset: 0; background: linear-gradient(135deg, var(--dark) 0%, var(--secondary) 100%);
+            display: flex; align-items: center; justify-content: center; z-index: 9999;
+        }
+        .login-box {
+            background: white; padding: 40px; border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3); width: 100%; max-width: 420px; text-align: center;
+        }
+        .login-box .logo { font-size: 48px; color: var(--primary); margin-bottom: 10px; }
+        .login-box h2 { color: var(--dark); margin-bottom: 8px; font-size: 24px; }
+        .login-box p { color: #666; margin-bottom: 30px; }
+        .login-box input {
+            width: 100%; padding: 14px 18px; border: 2px solid #e0e0e0;
+            border-radius: 12px; font-family: inherit; font-size: 16px; margin-bottom: 16px;
+        }
+        .login-box input:focus { outline: none; border-color: var(--primary); }
+        .login-box button {
+            width: 100%; padding: 14px; background: var(--primary); color: white;
+            border: none; border-radius: 12px; font-family: inherit; font-size: 16px;
+            font-weight: 700; cursor: pointer;
+        }
+        .login-box button:hover { background: var(--primary-dark); }
+        .login-error { color: var(--danger); margin-top: 12px; font-size: 14px; display: none; }
+        .admin-layout { display: none; }
+        .admin-layout.active { display: flex; }
+        .sidebar {
+            width: 280px; background: var(--sidebar); min-height: 100vh;
+            position: fixed; right: 0; top: 0; z-index: 100; overflow-y: auto;
+        }
+        .sidebar-header { padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 12px; }
+        .sidebar-header i { font-size: 32px; color: var(--primary); }
+        .sidebar-header h3 { color: white; font-size: 20px; }
+        .sidebar-header span { color: rgba(255,255,255,0.6); font-size: 12px; }
+        .sidebar-menu { padding: 16px 0; }
+        .sidebar-menu a {
+            display: flex; align-items: center; gap: 14px; padding: 14px 24px;
+            color: rgba(255,255,255,0.7); text-decoration: none;
+            border-right: 3px solid transparent; font-size: 15px;
+        }
+        .sidebar-menu a:hover, .sidebar-menu a.active { background: var(--sidebar-hover); color: white; border-right-color: var(--primary); }
+        .sidebar-menu a i { width: 24px; text-align: center; }
+        .main-content { margin-right: 280px; flex: 1; min-height: 100vh; }
+        .top-bar {
+            background: white; padding: 16px 30px; display: flex;
+            align-items: center; justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 50;
+        }
+        .top-bar h1 { font-size: 22px; color: var(--dark); }
+        .top-bar-actions { display: flex; align-items: center; gap: 16px; }
+        .top-bar-actions button {
+            background: none; border: none; font-size: 20px; color: var(--secondary);
+            cursor: pointer; padding: 8px; border-radius: 8px;
+        }
+        .top-bar-actions button:hover { background: var(--light); }
+        .mobile-toggle { display: none; }
+        .content-area { padding: 24px 30px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 24px; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); display: flex; align-items: center; gap: 18px; }
+        .stat-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+        .stat-icon.orange { background: #fff3e0; color: var(--primary); }
+        .stat-icon.green { background: #e8f5e9; color: var(--success); }
+        .stat-icon.blue { background: #e3f2fd; color: var(--info); }
+        .stat-icon.red { background: #ffebee; color: var(--danger); }
+        .stat-info h4 { color: #666; font-size: 14px; font-weight: 500; }
+        .stat-info p { color: var(--dark); font-size: 28px; font-weight: 800; }
+        .panel { background: white; border-radius: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 24px; overflow: hidden; }
+        .panel-header { padding: 20px 24px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; }
+        .panel-header h3 { font-size: 18px; display: flex; align-items: center; gap: 10px; }
+        .panel-body { padding: 24px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--dark); font-size: 14px; }
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%; padding: 12px 16px; border: 2px solid #e0e0e0;
+            border-radius: 10px; font-family: inherit; font-size: 15px;
+        }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: var(--primary); }
+        .form-group textarea { min-height: 100px; resize: vertical; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .btn { padding: 12px 24px; border-radius: 10px; font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-secondary { background: #ecf0f1; color: var(--secondary); }
+        .btn-sm { padding: 8px 16px; font-size: 13px; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 14px 16px; text-align: right; border-bottom: 1px solid #eee; }
+        th { background: #f8f9fa; font-weight: 700; color: var(--secondary); font-size: 13px; }
+        td { font-size: 14px; }
+        tr:hover td { background: #fafafa; }
+        .item-img { width: 48px; height: 48px; border-radius: 10px; object-fit: cover; background: #f0f0f0; display: flex; align-items: center; justify-content: center; }
+        .item-img i { color: #bbb; }
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .badge-success { background: #e8f5e9; color: var(--success); }
+        .badge-danger { background: #ffebee; color: var(--danger); }
+        .tabs { display: flex; gap: 4px; border-bottom: 2px solid #eee; margin-bottom: 24px; }
+        .tab-btn { padding: 12px 24px; background: none; border: none; font-family: inherit; font-size: 15px; font-weight: 600; color: #999; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; }
+        .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .image-upload { border: 2px dashed #ddd; border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; background: #fafafa; margin-top: 8px; }
+        .image-upload:hover { border-color: var(--primary); background: #fff8f0; }
+        .image-upload i { font-size: 40px; color: #ccc; margin-bottom: 12px; }
+        .image-upload p { color: #888; font-size: 14px; }
+        .image-preview { max-width: 200px; max-height: 200px; border-radius: 12px; margin-top: 12px; display: none; }
+        .toast-container { position: fixed; top: 24px; left: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; min-width: 300px; animation: slideIn 0.4s ease; border-right: 4px solid; }
+        .toast.success { border-color: var(--success); }
+        .toast.error { border-color: var(--danger); }
+        .toast.info { border-color: var(--info); }
+        @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 200; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: white; border-radius: 16px; width: 90%; max-width: 600px; max-height: 90vh; overflow-y: auto; animation: modalIn 0.3s ease; }
+        @keyframes modalIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid #eee; display: flex; align-items: center; justify-content: space-between; }
+        .modal-header h3 { font-size: 18px; }
+        .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #999; }
+        .modal-body { padding: 24px; }
+        .modal-footer { padding: 16px 24px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        .search-box { position: relative; margin-bottom: 20px; }
+        .search-box input { width: 100%; padding: 12px 16px 12px 44px; border: 2px solid #e0e0e0; border-radius: 10px; font-family: inherit; font-size: 14px; }
+        .search-box i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: #aaa; font-size: 16px; }
+        .toggle { display: flex; align-items: center; gap: 10px; }
+        .toggle-switch { width: 48px; height: 26px; background: #ddd; border-radius: 13px; position: relative; cursor: pointer; }
+        .toggle-switch::after { content: ''; position: absolute; width: 22px; height: 22px; background: white; border-radius: 50%; top: 2px; right: 2px; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .toggle-switch.active { background: var(--success); }
+        .toggle-switch.active::after { right: 24px; }
+        .color-picker { display: flex; gap: 8px; flex-wrap: wrap; }
+        .color-option { width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; }
+        .color-option:hover { transform: scale(1.1); }
+        .color-option.active { border-color: var(--dark); }
+        .empty-state { text-align: center; padding: 60px 20px; color: #aaa; }
+        .empty-state i { font-size: 64px; margin-bottom: 16px; }
+        .empty-state h4 { color: #666; margin-bottom: 8px; }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-right: 0; }
+            .mobile-toggle { display: block; }
+            .form-row { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-screen" id="loginScreen">
+        <div class="login-box">
+            <div class="logo"><i class="fas fa-crown"></i></div>
+            <h2>لوحة تحكم القيصر</h2>
+            <p>تسجيل الدخول للوصول إلى لوحة التحكم</p>
+            <input type="password" id="adminPassword" placeholder="كلمة المرور" onkeypress="if(event.key==='Enter')doLogin()">
+            <button onclick="doLogin()"><i class="fas fa-sign-in-alt"></i> دخول</button>
+            <p class="login-error" id="loginError">كلمة المرور غير صحيحة</p>
+            <p style="margin-top:16px;font-size:13px;color:#999">الافتراضية: admin123</p>
+        </div>
+    </div>
+
+    <div class="admin-layout" id="adminLayout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <i class="fas fa-crown"></i>
+                <div><h3>القيصر</h3><span>لوحة التحكم</span></div>
+            </div>
+            <nav class="sidebar-menu">
+                <a href="#" class="active" onclick="showSection('dashboard', this)"><i class="fas fa-tachometer-alt"></i> الرئيسية</a>
+                <a href="#" onclick="showSection('menu', this)"><i class="fas fa-utensils"></i> إدارة القائمة</a>
+                <a href="#" onclick="showSection('categories', this)"><i class="fas fa-tags"></i> التصنيفات</a>
+                <a href="#" onclick="showSection('offers', this)"><i class="fas fa-percent"></i> العروض</a>
+                <a href="#" onclick="showSection('settings', this)"><i class="fas fa-cog"></i> إعدادات الموقع</a>
+                <a href="#" onclick="showSection('appearance', this)"><i class="fas fa-palette"></i> المظهر</a>
+                <a href="index.html" target="_blank"><i class="fas fa-eye"></i> معاينة الموقع</a>
+                <a href="#" onclick="logout()" style="color:var(--danger)"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a>
+            </nav>
+        </aside>
+
+        <main class="main-content">
+            <div class="top-bar">
+                <h1 id="page-title"><i class="fas fa-tachometer-alt"></i> لوحة التحكم</h1>
+                <div class="top-bar-actions">
+                    <button class="mobile-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                    <button onclick="exportData()" title="تصدير البيانات"><i class="fas fa-download"></i></button>
+                    <button onclick="importData()" title="استيراد البيانات"><i class="fas fa-upload"></i></button>
+                    <button onclick="resetData()" title="إعادة تعيين"><i class="fas fa-redo"></i></button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <!-- Dashboard -->
+                <div id="dashboard-section" class="section-content">
+                    <div class="stats-grid">
+                        <div class="stat-card"><div class="stat-icon orange"><i class="fas fa-utensils"></i></div><div class="stat-info"><h4>إجمالي الأصناف</h4><p id="stat-items">0</p></div></div>
+                        <div class="stat-card"><div class="stat-icon green"><i class="fas fa-tags"></i></div><div class="stat-info"><h4>التصنيفات</h4><p id="stat-cats">0</p></div></div>
+                        <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-percent"></i></div><div class="stat-info"><h4>العروض النشطة</h4><p id="stat-offers">0</p></div></div>
+                        <div class="stat-card"><div class="stat-icon red"><i class="fas fa-eye"></i></div><div class="stat-info"><h4>الزيارات</h4><p id="stat-visits">0</p></div></div>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-header"><h3><i class="fas fa-info-circle"></i> معلومات سريعة</h3></div>
+                        <div class="panel-body">
+                            <p>مرحباً بك في لوحة تحكم <strong>مطعم القيصر</strong>! 🎉</p>
+                            <p style="margin-top:12px;color:#666">من هنا يمكنك إدارة:</p>
+                            <ul style="margin:12px 24px;color:#666;line-height:2">
+                                <li>إضافة وتعديل وحذف أصناف القائمة</li>
+                                <li>إدارة التصنيفات والفئات</li>
+                                <li>إنشاء وتحديث العروض الخاصة</li>
+                                <li>تخصيص إعدادات الموقع (الهاتف، العنوان، الساعات)</li>
+                                <li>تغيير ألوان الموقع والمظهر</li>
+                            </ul>
+                            <p style="margin-top:16px;color:#888;font-size:13px"><i class="fas fa-lightbulb"></i> نصيحة: جميع البيانات تُحفظ تلقائياً في المتصفح.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Menu -->
+                <div id="menu-section" class="section-content" style="display:none">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-utensils"></i> إدارة القائمة</h3>
+                            <button class="btn btn-primary btn-sm" onclick="openItemModal()"><i class="fas fa-plus"></i> إضافة صنف</button>
+                        </div>
+                        <div class="panel-body">
+                            <div class="search-box"><i class="fas fa-search"></i><input type="text" id="menuSearch" placeholder="ابحث في القائمة..." oninput="renderMenuTable()"></div>
+                            <div class="table-wrap"><table><thead><tr><th>#</th><th>الصورة</th><th>الاسم</th><th>التصنيف</th><th>السعر</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody id="menuTableBody"></tbody></table></div>
+                            <div class="empty-state" id="menuEmpty" style="display:none"><i class="fas fa-utensils"></i><h4>لا توجد أصناف</h4><p>اضغط "إضافة صنف" لإنشاء أول صنف</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Categories -->
+                <div id="categories-section" class="section-content" style="display:none">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-tags"></i> التصنيفات</h3>
+                            <button class="btn btn-primary btn-sm" onclick="openCategoryModal()"><i class="fas fa-plus"></i> إضافة تصنيف</button>
+                        </div>
+                        <div class="panel-body">
+                            <div class="table-wrap"><table><thead><tr><th>#</th><th>الاسم</th><th>الأيقونة</th><th>عدد الأصناف</th><th>الإجراءات</th></tr></thead><tbody id="categoriesTableBody"></tbody></table></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Offers -->
+                <div id="offers-section" class="section-content" style="display:none">
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-percent"></i> العروض الخاصة</h3>
+                            <button class="btn btn-primary btn-sm" onclick="openOfferModal()"><i class="fas fa-plus"></i> إضافة عرض</button>
+                        </div>
+                        <div class="panel-body">
+                            <div class="table-wrap"><table><thead><tr><th>#</th><th>الصورة</th><th>العنوان</th><th>الوصف</th><th>السعر</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody id="offersTableBody"></tbody></table></div>
+                            <div class="empty-state" id="offersEmpty" style="display:none"><i class="fas fa-percent"></i><h4>لا توجد عروض</h4><p>اضغط "إضافة عرض" لإنشاء أول عرض</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div id="settings-section" class="section-content" style="display:none">
+                    <div class="panel">
+                        <div class="panel-header"><h3><i class="fas fa-cog"></i> إعدادات الموقع</h3></div>
+                        <div class="panel-body">
+                            <div class="tabs">
+                                <button class="tab-btn active" onclick="showTab('general', this)">عام</button>
+                                <button class="tab-btn" onclick="showTab('contact', this)">التواصل</button>
+                                <button class="tab-btn" onclick="showTab('social', this)">مواقع التواصل</button>
+                                <button class="tab-btn" onclick="showTab('security', this)">الأمان</button>
+                            </div>
+                            <div id="tab-general" class="tab-content active">
+                                <div class="form-row">
+                                    <div class="form-group"><label>اسم المطعم</label><input type="text" id="site-name"></div>
+                                    <div class="form-group"><label>العنوان الفرعي</label><input type="text" id="site-subtitle"></div>
+                                </div>
+                                <div class="form-group"><label>وصف المطعم</label><textarea id="site-desc"></textarea></div>
+                                <div class="form-group"><label>عنوان المطعم</label><input type="text" id="site-address"></div>
+                                <div class="form-row">
+                                    <div class="form-group"><label>ساعات العمل</label><input type="text" id="site-hours"></div>
+                                    <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="site-email"></div>
+                                </div>
+                            </div>
+                            <div id="tab-contact" class="tab-content">
+                                <div class="form-group"><label>رقم الهاتف الرئيسي</label><input type="tel" id="site-phone"></div>
+                                <div class="form-group"><label>رقم واتساب</label><input type="tel" id="site-whatsapp"></div>
+                                <div class="form-group"><label>رقم هاتف ثانوي</label><input type="tel" id="site-phone2"></div>
+                            </div>
+                            <div id="tab-social" class="tab-content">
+                                <div class="form-group"><label><i class="fab fa-facebook"></i> فيسبوك</label><input type="url" id="social-facebook"></div>
+                                <div class="form-group"><label><i class="fab fa-instagram"></i> انستغرام</label><input type="url" id="social-instagram"></div>
+                                <div class="form-group"><label><i class="fab fa-twitter"></i> تويتر / X</label><input type="url" id="social-twitter"></div>
+                                <div class="form-group"><label><i class="fab fa-tiktok"></i> تيك توك</label><input type="url" id="social-tiktok"></div>
+                                <div class="form-group"><label><i class="fab fa-snapchat"></i> سناب شات</label><input type="url" id="social-snapchat"></div>
+                                <div class="form-group"><label><i class="fab fa-youtube"></i> يوتيوب</label><input type="url" id="social-youtube"></div>
+                            </div>
+                            <div id="tab-security" class="tab-content">
+                                <div class="form-group"><label>تغيير كلمة المرور</label><input type="password" id="new-password" placeholder="كلمة المرور الجديدة"></div>
+                                <div class="form-group"><label>تأكيد كلمة المرور</label><input type="password" id="confirm-password" placeholder="أعد كتابة كلمة المرور"></div>
+                            </div>
+                            <div style="margin-top:24px"><button class="btn btn-success" onclick="saveSettings()"><i class="fas fa-save"></i> حفظ الإعدادات</button></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appearance -->
+                <div id="appearance-section" class="section-content" style="display:none">
+                    <div class="panel">
+                        <div class="panel-header"><h3><i class="fas fa-palette"></i> تخصيص المظهر</h3></div>
+                        <div class="panel-body">
+                            <div class="form-group">
+                                <label>اللون الرئيسي</label>
+                                <div class="color-picker" id="primary-colors">
+                                    <div class="color-option active" style="background:#e67e22" data-color="#e67e22" onclick="selectColor(this,'primary')"></div>
+                                    <div class="color-option" style="background:#d35400" data-color="#d35400" onclick="selectColor(this,'primary')"></div>
+                                    <div class="color-option" style="background:#c0392b" data-color="#c0392b" onclick="selectColor(this,'primary')"></div>
+                                    <div class="color-option" style="background:#8e44ad" data-color="#8e44ad" onclick="selectColor(this,'primary')"></div>
+                                    <div class="color-option" style="background:#2980b9" data-color="#2980b9" onclick="selectColor(this,'primary')"></div>
+                                    <div class="color-option" style="background:#27ae60" data-color="#27ae60" onclick="selectColor(this,'primary')"></div>
+                                    <div class="color-option" style="background:#16a085" data-color="#16a085" onclick="selectColor(this,'primary')"></div>
+                                    <div class="color-option" style="background:#f39c12" data-color="#f39c12" onclick="selectColor(this,'primary')"></div>
+                                    <div class="color-option" style="background:#e74c3c" data-color="#e74c3c" onclick="selectColor(this,'primary')"></div>
+                                    <div class="color-option" style="background:#2c3e50" data-color="#2c3e50" onclick="selectColor(this,'primary')"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>لون الخلفية الداكن</label>
+                                <div class="color-picker" id="dark-colors">
+                                    <div class="color-option active" style="background:#1a1a2e" data-color="#1a1a2e" onclick="selectColor(this,'dark')"></div>
+                                    <div class="color-option" style="background:#0d1b2a" data-color="#0d1b2a" onclick="selectColor(this,'dark')"></div>
+                                    <div class="color-option" style="background:#1b1b1b" data-color="#1b1b1b" onclick="selectColor(this,'dark')"></div>
+                                    <div class="color-option" style="background:#2c3e50" data-color="#2c3e50" onclick="selectColor(this,'dark')"></div>
+                                    <div class="color-option" style="background:#1e272e" data-color="#1e272e" onclick="selectColor(this,'dark')"></div>
+                                </div>
+                            </div>
+                            <div class="form-group"><label>شعار المطعم (رابط الصورة)</label><input type="text" id="logo-url" placeholder="images/logo.png"></div>
+                            <div class="form-group"><label>صورة الخلفية الرئيسية (رابط)</label><input type="text" id="hero-bg" placeholder="رابط الصورة"></div>
+                            <div style="margin-top:24px"><button class="btn btn-success" onclick="saveAppearance()"><i class="fas fa-save"></i> حفظ المظهر</button></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Item Modal -->
+    <div class="modal-overlay" id="itemModal">
+        <div class="modal-box">
+            <div class="modal-header"><h3 id="itemModalTitle"><i class="fas fa-plus"></i> إضافة صنف</h3><button class="modal-close" onclick="closeItemModal()"><i class="fas fa-times"></i></button></div>
+            <div class="modal-body">
+                <input type="hidden" id="item-id">
+                <div class="form-row">
+                    <div class="form-group"><label>اسم الصنف *</label><input type="text" id="item-name"></div>
+                    <div class="form-group"><label>السعر *</label><input type="number" id="item-price"></div>
+                </div>
+                <div class="form-group"><label>التصنيف *</label><select id="item-category"><option value="">اختر التصنيف</option></select></div>
+                <div class="form-group"><label>الوصف</label><textarea id="item-desc"></textarea></div>
+                <div class="form-group"><label>صورة الصنف (رابط)</label><input type="text" id="item-image" oninput="previewImage(this.value, 'item-preview')"><img class="image-preview" id="item-preview"></div>
+                <div class="form-group"><label class="toggle"><div class="toggle-switch active" id="item-active-toggle" onclick="this.classList.toggle('active')"></div><span>متاح للبيع</span></label></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeItemModal()">إلغاء</button><button class="btn btn-success" onclick="saveItem()"><i class="fas fa-save"></i> حفظ</button></div>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div class="modal-overlay" id="categoryModal">
+        <div class="modal-box" style="max-width:450px">
+            <div class="modal-header"><h3 id="catModalTitle"><i class="fas fa-plus"></i> إضافة تصنيف</h3><button class="modal-close" onclick="closeCategoryModal()"><i class="fas fa-times"></i></button></div>
+            <div class="modal-body">
+                <input type="hidden" id="cat-id">
+                <div class="form-group"><label>اسم التصنيف *</label><input type="text" id="cat-name"></div>
+                <div class="form-group"><label>أيقونة FontAwesome</label><input type="text" id="cat-icon" placeholder="مثال: fa-utensils"><p style="font-size:12px;color:#999;margin-top:6px">fontawesome.com/icons</p></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeCategoryModal()">إلغاء</button><button class="btn btn-success" onclick="saveCategory()"><i class="fas fa-save"></i> حفظ</button></div>
+        </div>
+    </div>
+
+    <!-- Offer Modal -->
+    <div class="modal-overlay" id="offerModal">
+        <div class="modal-box">
+            <div class="modal-header"><h3 id="offerModalTitle"><i class="fas fa-plus"></i> إضافة عرض</h3><button class="modal-close" onclick="closeOfferModal()"><i class="fas fa-times"></i></button></div>
+            <div class="modal-body">
+                <input type="hidden" id="offer-id">
+                <div class="form-group"><label>عنوان العرض *</label><input type="text" id="offer-title"></div>
+                <div class="form-group"><label>الوصف</label><textarea id="offer-desc"></textarea></div>
+                <div class="form-row">
+                    <div class="form-group"><label>السعر الجديد *</label><input type="number" id="offer-price"></div>
+                    <div class="form-group"><label>السعر القديم</label><input type="number" id="offer-oldprice"></div>
+                </div>
+                <div class="form-group"><label>صورة العرض (رابط)</label><input type="text" id="offer-image" oninput="previewImage(this.value, 'offer-preview')"></div>
+                <div class="form-group"><label class="toggle"><div class="toggle-switch active" id="offer-active-toggle" onclick="this.classList.toggle('active')"></div><span>عرض نشط</span></label></div>
+            </div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeOfferModal()">إلغاء</button><button class="btn btn-success" onclick="saveOffer()"><i class="fas fa-save"></i> حفظ</button></div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+    <script src="js/admin.js"></script>
+</body>
+</html>

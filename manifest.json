@@ -1,0 +1,16 @@
+{
+  "name": "مطعم القيصر",
+  "short_name": "القيصر",
+  "description": "أشهى المأكولات بأجود المكونات",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#e67e22",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "images/logo.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "images/logo.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "lang": "ar",
+  "dir": "rtl"
+}
