@@ -1,16 +1,27 @@
 {
-  "name": "مطعم القيصر",
+  "name": "مطعم القيصر - القائمة الإلكترونية",
   "short_name": "القيصر",
-  "description": "أشهى المأكولات بأجود المكونات",
-  "start_url": "index.html",
+  "description": "أشهى المأكولات بأجود المكونات - طلب عبر الواتساب",
+  "start_url": "/index.html",
   "display": "standalone",
-  "background_color": "#1a1a2e",
-  "theme_color": "#e67e22",
+  "background_color": "#121212",
+  "theme_color": "#D4AF37",
   "orientation": "portrait",
+  "scope": "/",
   "icons": [
-    { "src": "images/logo.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "images/logo.png", "sizes": "512x512", "type": "image/png" }
+    { "src": "images/logo.png", "sizes": "72x72", "type": "image/png", "purpose": "any maskable" },
+    { "src": "images/logo.png", "sizes": "96x96", "type": "image/png", "purpose": "any maskable" },
+    { "src": "images/logo.png", "sizes": "128x128", "type": "image/png", "purpose": "any maskable" },
+    { "src": "images/logo.png", "sizes": "144x144", "type": "image/png", "purpose": "any maskable" },
+    { "src": "images/logo.png", "sizes": "152x152", "type": "image/png", "purpose": "any maskable" },
+    { "src": "images/logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "images/logo.png", "sizes": "384x384", "type": "image/png", "purpose": "any maskable" },
+    { "src": "images/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ],
   "lang": "ar",
-  "dir": "rtl"
+  "dir": "rtl",
+  "categories": ["food", "lifestyle", "shopping"],
+  "screenshots": [
+    { "src": "images/logo.png", "sizes": "512x512", "type": "image/png", "form_factor": "narrow" }
+  ]
 }

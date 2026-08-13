@@ -1,244 +1,221 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مطعم القيصر - القائمة</title>
-    <link rel="manifest" href="manifest.json">
-    <link rel="stylesheet" href="css/style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#121212">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>مطعم القيصر - القائمة الإلكترونية</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="images/logo.png">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-top">
-            <div class="container">
-                <div class="header-info">
-                    <span id="header-phone"><i class="fas fa-phone"></i> <span class="phone-number">--</span></span>
-                    <span id="header-hours"><i class="fas fa-clock"></i> <span class="work-hours">--</span></span>
-                </div>
-                <div class="social-links" id="social-links">
-                    <!-- Dynamic social links -->
-                </div>
-            </div>
-        </div>
-        <div class="header-main">
-            <div class="container">
-                <div class="logo">
-                    <img src="images/logo.png" alt="مطعم القيصر" id="logo-img" onerror="this.style.display='none'; document.getElementById('logo-text').style.display='flex'">
-                    <div id="logo-text" class="logo-fallback" style="display:none">
-                        <i class="fas fa-crown"></i>
-                        <span>القيصر</span>
-                    </div>
-                </div>
-                <nav class="main-nav">
-                    <a href="#home" class="active">الرئيسية</a>
-                    <a href="#menu">القائمة</a>
-                    <a href="#offers">العروض</a>
-                    <a href="#about">من نحن</a>
-                    <a href="#contact">اتصل بنا</a>
-                </nav>
-                <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
-                    <i class="fas fa-bars"></i>
-                </button>
-            </div>
-        </div>
-    </header>
+  <!-- Loading Screen -->
+  <div class="loading-screen" id="loadingScreen">
+    <img src="images/logo.png" alt="القيصر" onerror="this.style.display='none'">
+    <h2>مطعم القيصر</h2>
+    <p>جارٍ تحميل القائمة...</p>
+    <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+  </div>
 
-    <!-- Mobile Menu -->
-    <div class="mobile-menu" id="mobileMenu">
-        <button class="close-menu" onclick="toggleMobileMenu()"><i class="fas fa-times"></i></button>
-        <a href="#home" onclick="toggleMobileMenu()">الرئيسية</a>
-        <a href="#menu" onclick="toggleMobileMenu()">القائمة</a>
-        <a href="#offers" onclick="toggleMobileMenu()">العروض</a>
-        <a href="#about" onclick="toggleMobileMenu()">من نحن</a>
-        <a href="#contact" onclick="toggleMobileMenu()">اتصل بنا</a>
+  <!-- Alert Bar -->
+  <div class="alert-bar" id="alertBar">
+    <i class="fas fa-bullhorn"></i>
+    <span id="alertText">الأسعار قابلة للتعديل حسب النشرة اليومية</span>
+    <span class="close-alert" onclick="document.getElementById('alertBar').style.display='none'"><i class="fas fa-times"></i></span>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="container">
+      <div class="logo-wrap">
+        <img src="images/logo.png" alt="القيصر" id="headerLogo" onerror="this.style.display='none'">
+        <div class="logo-text">
+          <h1>مطعم القيصر</h1>
+          <span>أشهى المأكولات بأجود المكونات</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container">
+    <!-- Delivery Toggle -->
+    <div class="delivery-toggle" id="deliveryToggle">
+      <button class="active" data-mode="delivery" onclick="setDeliveryMode('delivery', this)">
+        <i class="fas fa-motorcycle"></i> توصيل للمنزل
+      </button>
+      <button data-mode="pickup" onclick="setDeliveryMode('pickup', this)">
+        <i class="fas fa-store"></i> استلام من الفرع
+      </button>
     </div>
 
-    <!-- Hero Section -->
-    <section class="hero" id="home">
-        <div class="hero-overlay"></div>
-        <div class="hero-content">
-            <h1 id="hero-title">مطعم القيصر</h1>
-            <p id="hero-subtitle">أشهى المأكولات بأجود المكونات</p>
-            <div class="hero-buttons">
-                <a href="#menu" class="btn btn-primary">تصفح القائمة</a>
-                <a href="tel:" id="hero-phone" class="btn btn-outline">اطلب الآن</a>
-            </div>
-        </div>
-        <div class="scroll-indicator">
-            <i class="fas fa-chevron-down"></i>
-        </div>
-    </section>
+    <!-- Zone Selector (for delivery) -->
+    <div class="zone-selector" id="zoneSelector">
+      <label><i class="fas fa-map-marker-alt"></i> اختر منطقتك</label>
+      <select id="zoneSelect" onchange="updateZoneFee()">
+        <option value="">-- اختر المنطقة --</option>
+      </select>
+      <div class="zone-fee" id="zoneFeeDisplay" style="display:none">
+        <span>كلفة التوصيل:</span>
+        <strong id="zoneFeeAmount">0 ل.س</strong>
+      </div>
+    </div>
 
     <!-- Offers Section -->
-    <section class="offers-section" id="offers">
-        <div class="container">
-            <div class="section-header">
-                <span class="section-tag">لا تفوتها</span>
-                <h2>عروضنا المميزة</h2>
-            </div>
-            <div class="offers-grid" id="offers-grid">
-                <!-- Dynamic offers -->
-            </div>
-        </div>
-    </section>
-
-    <!-- Menu Section -->
-    <section class="menu-section" id="menu">
-        <div class="container">
-            <div class="section-header">
-                <span class="section-tag">قائمتنا</span>
-                <h2>اكتشف أشهى الأطباق</h2>
-            </div>
-
-            <!-- Categories Filter -->
-            <div class="categories-filter" id="categories-filter">
-                <button class="cat-btn active" data-category="all">الكل</button>
-                <!-- Dynamic categories -->
-            </div>
-
-            <!-- Menu Grid -->
-            <div class="menu-grid" id="menu-grid">
-                <!-- Dynamic menu items -->
-            </div>
-        </div>
-    </section>
-
-    <!-- About Section -->
-    <section class="about-section" id="about">
-        <div class="container">
-            <div class="about-grid">
-                <div class="about-image">
-                    <div class="about-img-placeholder">
-                        <i class="fas fa-utensils"></i>
-                    </div>
-                </div>
-                <div class="about-content">
-                    <span class="section-tag">من نحن</span>
-                    <h2 id="about-title">قصة مطعم القيصر</h2>
-                    <p id="about-text">نقدم لكم أشهى المأكولات بأجود المكونات الطازجة، مع خبرة تزيد عن عشرين عاماً في عالم الطهي. مطعم القيصر وجهتكم المثالية للتميز والجودة.</p>
-                    <div class="about-features">
-                        <div class="feature">
-                            <i class="fas fa-medal"></i>
-                            <span>جودة عالية</span>
-                        </div>
-                        <div class="feature">
-                            <i class="fas fa-truck"></i>
-                            <span>توصيل سريع</span>
-                        </div>
-                        <div class="feature">
-                            <i class="fas fa-heart"></i>
-                            <span>ضيافة مميزة</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Contact Section -->
-    <section class="contact-section" id="contact">
-        <div class="container">
-            <div class="section-header">
-                <span class="section-tag">تواصل معنا</span>
-                <h2>نحن هنا لخدمتك</h2>
-            </div>
-            <div class="contact-grid">
-                <div class="contact-info">
-                    <div class="contact-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <div>
-                            <h4>العنوان</h4>
-                            <p id="contact-address">--</p>
-                        </div>
-                    </div>
-                    <div class="contact-item">
-                        <i class="fas fa-phone"></i>
-                        <div>
-                            <h4>الهاتف</h4>
-                            <p id="contact-phone">--</p>
-                        </div>
-                    </div>
-                    <div class="contact-item">
-                        <i class="fas fa-clock"></i>
-                        <div>
-                            <h4>ساعات العمل</h4>
-                            <p id="contact-hours">--</p>
-                        </div>
-                    </div>
-                    <div class="contact-item">
-                        <i class="fas fa-envelope"></i>
-                        <div>
-                            <h4>البريد الإلكتروني</h4>
-                            <p id="contact-email">--</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="contact-map">
-                    <div class="map-placeholder">
-                        <i class="fas fa-map-marked-alt"></i>
-                        <p>خريطة الموقع</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-grid">
-                <div class="footer-brand">
-                    <div class="logo">
-                        <i class="fas fa-crown"></i>
-                        <span>القيصر</span>
-                    </div>
-                    <p id="footer-desc">أشهى المأكولات بأجود المكونات</p>
-                </div>
-                <div class="footer-links">
-                    <h4>روابط سريعة</h4>
-                    <a href="#home">الرئيسية</a>
-                    <a href="#menu">القائمة</a>
-                    <a href="#offers">العروض</a>
-                    <a href="#contact">اتصل بنا</a>
-                </div>
-                <div class="footer-social">
-                    <h4>تابعنا</h4>
-                    <div class="social-icons" id="footer-social">
-                        <!-- Dynamic -->
-                    </div>
-                </div>
-            </div>
-            <div class="footer-bottom">
-                <p>© <span id="year"></span> مطعم القيصر. جميع الحقوق محفوظة.</p>
-                <a href="admin.html" class="admin-link"><i class="fas fa-cog"></i> لوحة التحكم</a>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Product Modal -->
-    <div class="modal" id="productModal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
-            <div class="modal-image">
-                <img src="" alt="" id="modal-img">
-            </div>
-            <div class="modal-info">
-                <span class="modal-category" id="modal-category"></span>
-                <h3 id="modal-title"></h3>
-                <p id="modal-desc"></p>
-                <div class="modal-price" id="modal-price"></div>
-                <div class="modal-actions">
-                    <a href="#" class="btn btn-primary" id="modal-order">
-                        <i class="fas fa-phone"></i> اطلب الآن
-                    </a>
-                </div>
-            </div>
-        </div>
+    <div id="offersSection" style="display:none">
+      <h2 class="menu-section-title"><i class="fas fa-fire"></i> عروضنا المميزة</h2>
+      <div class="offers-scroll" id="offersScroll"></div>
     </div>
 
-    <script src="js/app.js"></script>
+    <!-- Categories -->
+    <div class="categories-scroll" id="categoriesScroll">
+      <button class="cat-chip active" data-cat="all" onclick="filterCategory('all', this)">الكل</button>
+    </div>
+
+    <!-- Menu -->
+    <h2 class="menu-section-title"><i class="fas fa-utensils"></i> قائمة الطعام</h2>
+    <div class="menu-grid" id="menuGrid"></div>
+
+    <!-- Empty State -->
+    <div class="empty-state" id="menuEmpty" style="display:none">
+      <i class="fas fa-utensils"></i>
+      <h4>لا توجد أصناف</h4>
+      <p>سيتم إضافة الأصناف قريباً</p>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer" id="appFooter">
+    <div class="footer-logo">
+      <img src="images/logo.png" alt="القيصر" onerror="this.style.display='none'">
+      <h3>مطعم القيصر</h3>
+    </div>
+    <p id="footerDesc">أشهى المأكولات بأجود المكونات</p>
+    <div class="footer-social" id="footerSocial"></div>
+    <div class="footer-info">
+      <span><i class="fas fa-phone"></i> <span id="footerPhone">--</span></span>
+      <span><i class="fas fa-clock"></i> <span id="footerHours">--</span></span>
+      <span><i class="fas fa-map-marker-alt"></i> <span id="footerAddress">--</span></span>
+    </div>
+    <a href="admin.html" class="admin-link"><i class="fas fa-cog"></i> لوحة التحكم</a>
+  </footer>
+
+  <!-- Floating Cart Bar -->
+  <div class="cart-bar" id="cartBar">
+    <div class="cart-bar-inner" onclick="openCartModal()">
+      <div class="cart-bar-info">
+        <i class="fas fa-shopping-basket"></i>
+        <div>
+          <div class="items-count" id="cartItemsCount">0 صنف</div>
+          <div class="total-price" id="cartTotalPrice">0 ل.س</div>
+        </div>
+      </div>
+      <div class="cart-bar-btn">
+        <i class="fab fa-whatsapp"></i> طلب عبر الواتساب
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart Modal -->
+  <div class="modal-overlay" id="cartModal">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3><i class="fas fa-shopping-basket"></i> سلة المشتريات</h3>
+        <button class="modal-close" onclick="closeCartModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" id="cartModalBody">
+        <div class="empty-state">
+          <i class="fas fa-shopping-basket"></i>
+          <h4>السلة فارغة</h4>
+          <p>أضف بعض الأصناف لطلبك</p>
+        </div>
+      </div>
+      <div class="modal-footer" id="cartModalFooter" style="display:none">
+        <div class="cart-summary">
+          <div class="cart-summary-row">
+            <span>المجموع الفرعي:</span>
+            <span id="subtotalPrice">0 ل.س</span>
+          </div>
+          <div class="cart-summary-row" id="deliveryFeeRow">
+            <span>كلفة التوصيل:</span>
+            <span id="deliveryFeePrice">0 ل.س</span>
+          </div>
+          <div class="cart-summary-row total">
+            <span>الإجمالي:</span>
+            <span id="finalTotalPrice">0 ل.س</span>
+          </div>
+        </div>
+        <div style="margin-top:16px">
+          <button class="btn-whatsapp" onclick="sendWhatsAppOrder()">
+            <i class="fab fa-whatsapp"></i> إرسال الطلب عبر الواتساب
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer Info Modal -->
+  <div class="modal-overlay" id="customerModal">
+    <div class="modal-sheet">
+      <div class="modal-header">
+        <h3><i class="fas fa-user"></i> بيانات الطلب</h3>
+        <button class="modal-close" onclick="closeCustomerModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>الاسم الكامل *</label>
+          <input type="text" id="custName" placeholder="اسمك الثلاثي">
+        </div>
+        <div class="form-group">
+          <label>رقم الهاتف *</label>
+          <input type="tel" id="custPhone" placeholder="09xxxxxxxx">
+        </div>
+        <div class="form-group" id="addressGroup">
+          <label>العنوان التفصيلي *</label>
+          <textarea id="custAddress" placeholder="المنطقة - الحي - أقرب نقطة دالة - رقم البناء"></textarea>
+        </div>
+        <div class="form-group">
+          <label>ملاحظات الطلب (اختياري)</label>
+          <textarea id="custNotes" placeholder="مثال: بدون بصل، إضافة جبنة إضافية..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-whatsapp" onclick="confirmOrder()">
+          <i class="fab fa-whatsapp"></i> تأكيد وإرسال الطلب
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PWA Install Banner -->
+  <div class="pwa-banner" id="pwaBanner">
+    <img src="images/logo.png" alt="القيصر" onerror="this.style.display='none'">
+    <div>
+      <h4>تثبيت تطبيق القيصر</h4>
+      <p>افتح القائمة بسرعة حتى بدون إنترنت</p>
+    </div>
+    <button onclick="installPWA()">تثبيت</button>
+    <button class="close-pwa" onclick="document.getElementById('pwaBanner').classList.remove('visible')"><i class="fas fa-times"></i></button>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/app.js"></script>
+  <script>
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').then(() => {
+        console.log('[PWA] Service Worker registered');
+      }).catch((err) => {
+        console.log('[PWA] SW registration failed:', err);
+      });
+    }
+  </script>
 </body>
 </html>
