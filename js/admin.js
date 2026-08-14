@@ -1,3 +1,11 @@
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 // ═══════════════════════════════════════════
 //  مطعم القيصر - لوحة التحكم v3.0
 //  + Image upload from phone (Base64)
@@ -12,7 +20,7 @@ const DB = {
 function doLogin() {
   try {
     let p = document.getElementById('adminPassword').value;
-    let s = DB.get('password', 'admin123');
+    let s = DB.get('password', btoa('admin123'));
     if (p === s) {
       sessionStorage.setItem('alqaysar_admin', 'true');
       document.getElementById('loginScreen').style.display = 'none';
@@ -125,7 +133,7 @@ function renderMenuTable() {
     let cat = cats.find(c => c.id == item.category);
     return '<tr><td>' + (idx + 1) + '</td>' +
       '<td><div class="item-img">' + (item.image ? '<img src="' + item.image + '" style="width:40px;height:40px;object-fit:cover;border-radius:8px">' : '<i class="fas fa-image"></i>') + '</div></td>' +
-      '<td><strong>' + item.name + '</strong></td>' +
+      '<td><strong>' + escapeHtml(item.name) + '</strong></td>' +
       '<td>' + (cat ? cat.name : '--') + '</td>' +
       '<td>' + (item.price ? item.price.toLocaleString('ar-SY') : '--') + '</td>' +
       '<td><span class="badge ' + (item.active ? 'badge-on' : 'badge-off') + '">' + (item.active ? 'متاح' : 'مخفي') + '</span></td>' +

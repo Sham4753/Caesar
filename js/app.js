@@ -1,3 +1,11 @@
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
  // ═══════════════════════════════════════════
 //  مطعم القيصر - منطق التطبيق (الزبائن)
 //  v2.0 - Fixed for Firebase/GitHub Pages hosting
@@ -250,12 +258,12 @@ function renderMenu() {
     const qty = cart[item.id] || 0;
     return '<div class="menu-card fade-in">' +
       '<div class="menu-card-img">' +
-        (item.image ? '<img src="' + item.image + '" alt="' + item.name + '" loading="lazy" onload="this.classList.add('loaded')">' : '') +
+        (item.image ? '<img src="' + item.image + '" alt="' + escapeHtml(item.name) + '" loading="lazy" onload="this.classList.add('loaded')">' : '') +
         '<div class="img-placeholder"><i class="fas fa-utensils"></i></div>' +
       '</div>' +
       '<div class="menu-card-body">' +
-        '<h4 class="menu-card-title">' + item.name + '</h4>' +
-        '<p class="menu-card-desc">' + (item.desc || '') + '</p>' +
+        '<h4 class="menu-card-title">' + escapeHtml(item.name) + '</h4>' +
+        '<p class="menu-card-desc">' + (escapeHtml(item.desc) || '') + '</p>' +
         '<div class="menu-card-footer">' +
           '<span class="menu-card-price">' + formatPrice(item.price) + '</span>' +
           (qty > 0 
@@ -315,7 +323,7 @@ function updateQty(itemId, delta) {
   renderMenu();
   updateCartBar();
 
-  if (delta > 0) toast('تمت الإضافة: ' + item.name, 'success');
+  if (delta > 0) toast('تمت الإضافة: ' + escapeHtml(item.name), 'success');
   else if (qty === 0) toast('تمت الإزالة من السلة', 'info');
 }
 
@@ -370,7 +378,7 @@ function openCartModal() {
         '<div class="cart-item">' +
           '<div class="cart-item-img">' + (item.image ? '<img src="' + item.image + '">' : '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#555"><i class="fas fa-utensils"></i></div>') + '</div>' +
           '<div class="cart-item-info">' +
-            '<h4>' + item.name + '</h4>' +
+            '<h4>' + escapeHtml(item.name) + '</h4>' +
             '<span class="item-price">' + formatPrice(item.price) + ' × ' + item.qty + '</span>' +
           '</div>' +
           '<div class="cart-item-actions">' +
@@ -443,7 +451,7 @@ function confirmOrder() {
     if (item) {
       const lineTotal = item.price * cart[id];
       subtotal += lineTotal;
-      itemsText += '• ' + item.name + ' × ' + cart[id] + ' = ' + formatPrice(lineTotal) + '\n';
+      itemsText += '• ' + escapeHtml(item.name) + ' × ' + cart[id] + ' = ' + formatPrice(lineTotal) + '\n';
     }
   }
 
