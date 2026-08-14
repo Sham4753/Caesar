@@ -106,10 +106,17 @@ let deferredPrompt = null;
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', function() {
   try {
-    initDefaults();
-    renderAll();
-    loadCart();
-    setupPWA();
+    loadMenuFromFirestore().then(() => {
+      initDefaults();
+      renderAll();
+      loadCart();
+      setupPWA();
+      setTimeout(function() {
+        var ls = document.getElementById('loadingScreen');
+        if (ls) ls.classList.add('hidden');
+      }, 500);
+    });
+    return;
     // Hide loading screen after everything renders
     setTimeout(function() {
       var ls = document.getElementById('loadingScreen');
@@ -521,3 +528,38 @@ document.addEventListener('click', (e) => {
     document.body.style.overflow = '';
   }
 });
+
+// ===== FIRESTORE =====
+async function loadMenuFromFirestore() {
+  try {
+    showLoader();
+    const catsSnap = await db.collection('categories').orderBy('createdAt').get();
+    const itemsSnap = await db.collection('menu').orderBy('createdAt').get();
+    const offersSnap = await db.collection('offers').orderBy('createdAt').get();
+    
+    const categories = [];
+    catsSnap.forEach(doc => {
+      categories.push({ id: doc.id, ...doc.data() });
+    });
+    
+    const menu = [];
+    itemsSnap.forEach(doc => {
+      menu.push({ id: doc.id, ...doc.data() });
+    });
+    
+    const offers = [];
+    offersSnap.forEach(doc => {
+      offers.push({ id: doc.id, ...doc.data() });
+    });
+    
+    localStorage.setItem('alqaysar_categories', JSON.stringify(categories));
+    localStorage.setItem('alqaysar_menu', JSON.stringify(menu));
+    localStorage.setItem('alqaysar_offers', JSON.stringify(offers));
+    
+    renderMenu();
+    hideLoader();
+  } catch(e) {
+    console.error('Firestore error:', e);
+    hideLoader();
+  }
+}

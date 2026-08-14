@@ -192,6 +192,7 @@ function saveItem() {
     items.push(data);
   }
   DB.set('menu', items);
+  syncToFirestore();
   closeItemModal();
   renderMenuTable();
   updateStats();
@@ -201,6 +202,7 @@ function saveItem() {
 function deleteItem(id) {
   if (!confirm('هل أنت متأكد من حذف هذا الصنف؟')) return;
   DB.set('menu', DB.get('menu', []).filter(i => i.id !== id));
+  syncToFirestore();
   renderMenuTable();
   updateStats();
   toast('تم الحذف');
@@ -269,6 +271,7 @@ function saveCategory() {
     cats.push(data);
   }
   DB.set('categories', cats);
+  syncToFirestore();
   closeCategoryModal();
   renderCategoriesTable();
   updateStats();
@@ -278,6 +281,7 @@ function saveCategory() {
 function deleteCategory(id) {
   if (!confirm('هل أنت متأكد؟')) return;
   DB.set('categories', DB.get('categories', []).filter(c => c.id !== id));
+  syncToFirestore();
   renderCategoriesTable();
   updateStats();
   toast('تم الحذف');
@@ -366,6 +370,7 @@ function saveOffer() {
     offers.push(data);
   }
   DB.set('offers', offers);
+  syncToFirestore();
   closeOfferModal();
   renderOffersTable();
   updateStats();
@@ -375,6 +380,7 @@ function saveOffer() {
 function deleteOffer(id) {
   if (!confirm('هل أنت متأكد؟')) return;
   DB.set('offers', DB.get('offers', []).filter(o => o.id !== id));
+  syncToFirestore();
   renderOffersTable();
   updateStats();
   toast('تم الحذف');
@@ -580,3 +586,38 @@ document.addEventListener('click', (e) => {
     e.target.classList.remove('active');
   }
 });
+
+// ===== FIRESTORE SYNC =====
+async function syncToFirestore() {
+  try {
+    const categories = DB.get('categories', []);
+    const menu = DB.get('menu', []);
+    const offers = DB.get('offers', []);
+    
+    // Sync categories
+    const catsSnap = await db.collection('categories').get();
+    catsSnap.forEach(async doc => { await doc.ref.delete(); });
+    for (const cat of categories) {
+      await db.collection('categories').add({ ...cat, createdAt: Date.now() });
+    }
+    
+    // Sync menu
+    const menuSnap = await db.collection('menu').get();
+    menuSnap.forEach(async doc => { await doc.ref.delete(); });
+    for (const item of menu) {
+      await db.collection('menu').add({ ...item, createdAt: Date.now() });
+    }
+    
+    // Sync offers
+    const offersSnap = await db.collection('offers').get();
+    offersSnap.forEach(async doc => { await doc.ref.delete(); });
+    for (const offer of offers) {
+      await db.collection('offers').add({ ...offer, createdAt: Date.now() });
+    }
+    
+    toast('✅ تم مزامنة البيانات مع السحابة');
+  } catch(e) {
+    console.error('Firestore sync error:', e);
+    toast('خطأ في المزامنة: ' + e.message, 'error');
+  }
+}
