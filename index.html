@@ -3,245 +3,212 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#121212">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>مطعم القيصر - القائمة الإلكترونية</title>
   <link rel="manifest" href="./manifest.json">
-  <link rel="apple-touch-icon" href="./images/logo.png">
+  <link rel="icon" type="image/png" href="./images/logo.png">
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="./css/style.css">
   <style>
-    /* Emergency fallback if CSS fails to load */
-    body { background: #121212; color: #f5f5f5; font-family: 'Tajawal', sans-serif; }
-    .loading-screen { position: fixed; inset: 0; background: #121212; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 99999; transition: opacity 0.5s; }
-    .loading-screen.hidden { opacity: 0; pointer-events: none; }
-    .loading-screen img { width: 120px; height: 120px; object-fit: contain; margin-bottom: 20px; }
-    .loading-screen h2 { color: #D4AF37; font-size: 26px; margin-bottom: 8px; }
-    .loading-screen p { color: #888; font-size: 14px; }
-    .loading-bar { width: 200px; height: 3px; background: #333; border-radius: 3px; margin-top: 16px; overflow: hidden; }
-    .loading-bar-inner { height: 100%; width: 0%; background: linear-gradient(90deg, #D4AF37, #F4D03F); border-radius: 3px; animation: loadBar 1.2s ease forwards; }
-    @keyframes loadBar { to { width: 100%; } }
-    .error-fallback { display: none; text-align: center; padding: 40px 20px; }
-    .error-fallback.visible { display: block; }
-    .error-fallback button { background: #D4AF37; color: #000; padding: 12px 24px; border-radius: 10px; border: none; font-weight: 700; margin-top: 16px; cursor: pointer; }
+    /* Inline critical styles for faster first paint */
+    body { font-family: 'Tajawal', sans-serif; }
   </style>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDkm_7B-gaoRcnv9YICglkdbeWDuMIpj0U",
-  authDomain: "caesar-restaurant-4753.firebaseapp.com",
-  projectId: "caesar-restaurant-4753",
-  storageBucket: "caesar-restaurant-4753.firebasestorage.app",
-  messagingSenderId: "854904444247",
-  appId: "1:854904444247:web:be4ab39123bd6925c4da12"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-</script>
 </head>
 <body>
-  <!-- Loading Screen with safety timeout -->
-  <div class="loading-screen" id="loadingScreen">
-    <img src="./images/logo.png" alt="القيصر" id="loadLogo" onerror="this.style.display='none'; document.getElementById('loadText').textContent='👑 مطعم القيصر'">
-    <h2 id="loadText">مطعم القيصر</h2>
-    <p id="loadSub">جارٍ تحميل القائمة...</p>
-    <div class="loading-bar"><div class="loading-bar-inner"></div></div>
-    <div class="error-fallback" id="errorFallback">
-      <p style="color:#e74c3c;margin-top:20px">⚠️ حدث خطأ في التحميل</p>
-      <button onclick="location.reload(true)">إعادة المحاولة</button>
-    </div>
-  </div>
 
-  <!-- Alert Bar -->
-  <div class="alert-bar" id="alertBar">
-    <i class="fas fa-bullhorn"></i>
-    <span id="alertText">الأسعار قابلة للتعديل حسب النشرة اليومية</span>
-    <span class="close-alert" onclick="document.getElementById('alertBar').style.display='none'"><i class="fas fa-times"></i></span>
-  </div>
+<!-- Loading Screen -->
+<div id="loadingScreen" class="loading-screen">
+  <img src="./images/logo.png" alt="مطعم القيصر">
+  <h2>مطعم القيصر</h2>
+  <p>جارٍ التحميل...</p>
+  <div class="loading-bar"><div class="loading-bar-inner"></div></div>
+</div>
 
-  <!-- Header -->
-  <header class="app-header">
-    <div class="container">
-      <div class="logo-wrap">
-        <img src="./images/logo.png" alt="القيصر" id="headerLogo" onerror="this.style.display='none'">
-        <div class="logo-text">
-          <h1>مطعم القيصر</h1>
-          <span>أشهى المأكولات بأجود المكونات</span>
-        </div>
+<!-- Alert Bar -->
+<div class="alert-bar">
+  <i class="fas fa-bullhorn"></i>
+  <span id="alertText">الأسعار قابلة للتعديل حسب النشرة اليومية</span>
+  <span class="close-alert" onclick="this.parentElement.style.display='none'"><i class="fas fa-times"></i></span>
+</div>
+
+<!-- Header -->
+<header class="app-header">
+  <div class="container">
+    <div class="logo-wrap">
+      <img src="./images/logo.png" alt="القيصر">
+      <div class="logo-text">
+        <h1>مطعم القيصر</h1>
+        <span>أشهى المأكولات بأجود المكونات</span>
       </div>
     </div>
-  </header>
+  </div>
+</header>
 
-  <!-- Main Content -->
-  <main class="container">
-    <!-- Delivery Toggle -->
-    <div class="delivery-toggle" id="deliveryToggle">
-      <button class="active" data-mode="delivery" onclick="setDeliveryMode('delivery', this)">
-        <i class="fas fa-motorcycle"></i> توصيل للمنزل
+<main class="container">
+  <!-- Delivery Toggle -->
+  <div id="deliveryToggle" class="delivery-toggle">
+    <button class="active" onclick="setDeliveryMode('delivery', this)">
+      <i class="fas fa-motorcycle"></i> توصيل
+    </button>
+    <button onclick="setDeliveryMode('pickup', this)">
+      <i class="fas fa-store"></i> استلام
+    </button>
+  </div>
+
+  <!-- Zone Selector -->
+  <div id="zoneSelector" class="zone-selector">
+    <label><i class="fas fa-map-marker-alt"></i> اختر منطقة التوصيل</label>
+    <select id="zoneSelect" onchange="updateZoneFee()">
+      <option value="">-- اختر المنطقة --</option>
+    </select>
+    <div id="zoneFeeDisplay" class="zone-fee" style="display:none;">
+      <span>كلفة التوصيل:</span>
+      <strong id="zoneFeeAmount">0 ل.س</strong>
+    </div>
+  </div>
+
+  <!-- Categories -->
+  <div class="menu-section-title"><i class="fas fa-th-large"></i> التصنيفات</div>
+  <div id="categoriesScroll" class="categories-scroll">
+    <button class="cat-chip active" data-cat="all" onclick="filterCategory('all', this)">الكل</button>
+  </div>
+
+  <!-- Offers -->
+  <div id="offersSection">
+    <div class="menu-section-title"><i class="fas fa-fire"></i> العروض الخاصة</div>
+    <div id="offersScroll" class="offers-scroll"></div>
+  </div>
+
+  <!-- Menu -->
+  <div class="menu-section-title"><i class="fas fa-utensils"></i> القائمة</div>
+  <div id="menuGrid" class="menu-grid"></div>
+  <div id="menuEmpty" class="empty-state" style="display:none;">
+    <i class="fas fa-utensils"></i>
+    <h4>لا توجد أصناف</h4>
+    <p>سيتم إضافة الأصناف قريباً</p>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="app-footer">
+  <div class="footer-logo">
+    <img src="./images/logo.png" alt="القيصر">
+    <h3>مطعم القيصر</h3>
+  </div>
+  <p id="footerDesc">نقدم لكم أشهى المأكولات بأجود المكونات الطازجة.</p>
+  <div id="footerSocial" class="footer-social"></div>
+  <div class="footer-info">
+    <span><i class="fas fa-phone"></i> <span id="footerPhone">--</span></span>
+    <span><i class="fas fa-clock"></i> <span id="footerHours">--</span></span>
+    <span><i class="fas fa-map-marker-alt"></i> <span id="footerAddress">--</span></span>
+  </div>
+  <a href="./admin.html" class="admin-link"><i class="fas fa-cog"></i> لوحة التحكم</a>
+</footer>
+
+<!-- Cart Bar -->
+<div id="cartBar" class="cart-bar">
+  <div class="cart-bar-inner" onclick="openCartModal()">
+    <div class="cart-bar-info">
+      <i class="fas fa-shopping-bag"></i>
+      <div>
+        <div id="cartItemsCount" class="items-count">0 أصناف</div>
+        <div id="cartTotalPrice" class="total-price">0 ل.س</div>
+      </div>
+    </div>
+    <div class="cart-bar-btn">
+      <span>عرض السلة</span>
+      <i class="fas fa-arrow-left"></i>
+    </div>
+  </div>
+</div>
+
+<!-- Cart Modal -->
+<div id="cartModal" class="modal-overlay" onclick="if(event.target===this){closeCartModal();}">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <h3><i class="fas fa-shopping-bag"></i> سلة المشتريات</h3>
+      <button class="modal-close" onclick="closeCartModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="cartModalBody" class="modal-body"></div>
+    <div id="cartModalFooter" class="modal-footer" style="display:none;">
+      <div class="cart-summary">
+        <div class="cart-summary-row">
+          <span>المجموع الفرعي</span>
+          <span id="subtotalPrice">0 ل.س</span>
+        </div>
+        <div id="deliveryFeeRow" class="cart-summary-row" style="display:none;">
+          <span>كلفة التوصيل</span>
+          <span id="deliveryFeePrice">0 ل.س</span>
+        </div>
+        <div class="cart-summary-row total">
+          <span>الإجمالي</span>
+          <span id="finalTotalPrice">0 ل.س</span>
+        </div>
+      </div>
+      <button class="btn-whatsapp" onclick="sendWhatsAppOrder()" style="margin-top:12px;">
+        <i class="fab fa-whatsapp"></i> إرسال الطلب عبر الواتساب
       </button>
-      <button data-mode="pickup" onclick="setDeliveryMode('pickup', this)">
-        <i class="fas fa-store"></i> استلام من الفرع
+    </div>
+  </div>
+</div>
+
+<!-- Customer Modal -->
+<div id="customerModal" class="modal-overlay" onclick="if(event.target===this){closeCustomerModal();}">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <h3><i class="fas fa-user"></i> معلومات الطلب</h3>
+      <button class="modal-close" onclick="closeCustomerModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>الاسم الكامل *</label>
+        <input type="text" id="custName" placeholder="أدخل اسمك">
+      </div>
+      <div class="form-group">
+        <label>رقم الهاتف *</label>
+        <input type="tel" id="custPhone" placeholder="مثال: 0999123456">
+      </div>
+      <div class="form-group" id="addressGroup">
+        <label>العنوان *</label>
+        <input type="text" id="custAddress" placeholder="المنطقة، الشارع، البناء">
+      </div>
+      <div class="form-group">
+        <label>ملاحظات (اختياري)</label>
+        <textarea id="custNotes" placeholder="أي ملاحظات خاصة بالطلب..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-whatsapp" onclick="confirmOrder()">
+        <i class="fab fa-whatsapp"></i> تأكيد وإرسال
       </button>
     </div>
-
-    <!-- Zone Selector (for delivery) -->
-    <div class="zone-selector" id="zoneSelector">
-      <label><i class="fas fa-map-marker-alt"></i> اختر منطقتك</label>
-      <select id="zoneSelect" onchange="updateZoneFee()">
-        <option value="">-- اختر المنطقة --</option>
-      </select>
-      <div class="zone-fee" id="zoneFeeDisplay" style="display:none">
-        <span>كلفة التوصيل:</span>
-        <strong id="zoneFeeAmount">0 ل.س</strong>
-      </div>
-    </div>
-
-    <!-- Offers Section -->
-    <div id="offersSection" style="display:none">
-      <h2 class="menu-section-title"><i class="fas fa-fire"></i> عروضنا المميزة</h2>
-      <div class="offers-scroll" id="offersScroll"></div>
-    </div>
-
-    <!-- Categories -->
-    <div class="categories-scroll" id="categoriesScroll">
-      <button class="cat-chip active" data-cat="all" onclick="filterCategory('all', this)">الكل</button>
-    </div>
-
-    <!-- Menu -->
-    <h2 class="menu-section-title"><i class="fas fa-utensils"></i> قائمة الطعام</h2>
-    <div class="menu-grid" id="menuGrid"></div>
-
-    <!-- Empty State -->
-    <div class="empty-state" id="menuEmpty" style="display:none">
-      <i class="fas fa-utensils"></i>
-      <h4>لا توجد أصناف</h4>
-      <p>سيتم إضافة الأصناف قريباً</p>
-    </div>
-  </main>
-
-  <!-- Footer -->
-  <footer class="app-footer" id="appFooter">
-    <div class="footer-logo">
-      <img src="./images/logo.png" alt="القيصر" onerror="this.style.display='none'">
-      <h3>مطعم القيصر</h3>
-    </div>
-    <p id="footerDesc">أشهى المأكولات بأجود المكونات</p>
-    <div class="footer-social" id="footerSocial"></div>
-    <div class="footer-info">
-      <span><i class="fas fa-phone"></i> <span id="footerPhone">--</span></span>
-      <span><i class="fas fa-clock"></i> <span id="footerHours">--</span></span>
-      <span><i class="fas fa-map-marker-alt"></i> <span id="footerAddress">--</span></span>
-    </div>
-    <a href="./admin.html" class="admin-link"><i class="fas fa-cog"></i> لوحة التحكم</a>
-  </footer>
-
-  <!-- Floating Cart Bar -->
-  <div class="cart-bar" id="cartBar">
-    <div class="cart-bar-inner" onclick="openCartModal()">
-      <div class="cart-bar-info">
-        <i class="fas fa-shopping-basket"></i>
-        <div>
-          <div class="items-count" id="cartItemsCount">0 صنف</div>
-          <div class="total-price" id="cartTotalPrice">0 ل.س</div>
-        </div>
-      </div>
-      <div class="cart-bar-btn">
-        <i class="fab fa-whatsapp"></i> طلب عبر الواتساب
-      </div>
-    </div>
   </div>
+</div>
 
-  <!-- Cart Modal -->
-  <div class="modal-overlay" id="cartModal">
-    <div class="modal-sheet">
-      <div class="modal-header">
-        <h3><i class="fas fa-shopping-basket"></i> سلة المشتريات</h3>
-        <button class="modal-close" onclick="closeCartModal()"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body" id="cartModalBody">
-        <div class="empty-state"><i class="fas fa-shopping-basket"></i><h4>السلة فارغة</h4><p>أضف بعض الأصناف لطلبك</p></div>
-      </div>
-      <div class="modal-footer" id="cartModalFooter" style="display:none">
-        <div class="cart-summary">
-          <div class="cart-summary-row"><span>المجموع الفرعي:</span><span id="subtotalPrice">0 ل.س</span></div>
-          <div class="cart-summary-row" id="deliveryFeeRow"><span>كلفة التوصيل:</span><span id="deliveryFeePrice">0 ل.س</span></div>
-          <div class="cart-summary-row total"><span>الإجمالي:</span><span id="finalTotalPrice">0 ل.س</span></div>
-        </div>
-        <div style="margin-top:16px">
-          <button class="btn-whatsapp" onclick="sendWhatsAppOrder()">
-            <i class="fab fa-whatsapp"></i> إرسال الطلب عبر الواتساب
-          </button>
-        </div>
-      </div>
-    </div>
+<!-- PWA Install Banner -->
+<div id="pwaBanner" class="pwa-banner">
+  <img src="./images/logo.png" alt="القيصر">
+  <div>
+    <h4>ثبّت تطبيق القيصر</h4>
+    <p>وصول أسرع حتى بدون إنترنت</p>
   </div>
+  <button onclick="installPWA()">تثبيت</button>
+  <span class="close-pwa" onclick="document.getElementById('pwaBanner').classList.remove('visible')"><i class="fas fa-times"></i></span>
+</div>
 
-  <!-- Customer Info Modal -->
-  <div class="modal-overlay" id="customerModal">
-    <div class="modal-sheet">
-      <div class="modal-header">
-        <h3><i class="fas fa-user"></i> بيانات الطلب</h3>
-        <button class="modal-close" onclick="closeCustomerModal()"><i class="fas fa-times"></i></button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>الاسم الكامل *</label>
-          <input type="text" id="custName" placeholder="اسمك الثلاثي">
-        </div>
-        <div class="form-group">
-          <label>رقم الهاتف *</label>
-          <input type="tel" id="custPhone" placeholder="09xxxxxxxx">
-        </div>
-        <div class="form-group" id="addressGroup">
-          <label>العنوان التفصيلي *</label>
-          <textarea id="custAddress" placeholder="المنطقة - الحي - أقرب نقطة دالة - رقم البناء"></textarea>
-        </div>
-        <div class="form-group">
-          <label>ملاحظات الطلب (اختياري)</label>
-          <textarea id="custNotes" placeholder="مثال: بدون بصل، إضافة جبنة إضافية..."></textarea>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn-whatsapp" onclick="confirmOrder()">
-          <i class="fab fa-whatsapp"></i> تأكيد وإرسال الطلب
-        </button>
-      </div>
-    </div>
-  </div>
+<!-- Toast Container -->
+<div id="toastContainer" class="toast-container"></div>
 
-  <!-- PWA Install Banner -->
-  <div class="pwa-banner" id="pwaBanner">
-    <img src="./images/logo.png" alt="القيصر" onerror="this.style.display='none'">
-    <div>
-      <h4>تثبيت تطبيق القيصر</h4>
-      <p>افتح القائمة بسرعة حتى بدون إنترنت</p>
-    </div>
-    <button onclick="installPWA()">تثبيت</button>
-    <button class="close-pwa" onclick="document.getElementById('pwaBanner').classList.remove('visible')"><i class="fas fa-times"></i></button>
-  </div>
+<!-- Firebase SDK (optional - only if you configure it) -->
+<!-- <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script> -->
+<!-- <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script> -->
+<!-- <script> const firebaseConfig = { ... }; firebase.initializeApp(firebaseConfig); const db = firebase.firestore(); </script> -->
 
-  <!-- Toast Container -->
-  <div class="toast-container" id="toastContainer"></div>
-
-  <!-- Register Service Worker with relative path -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('./sw.js')
-        .then(function(reg) { console.log('[PWA] SW registered:', reg.scope); })
-        .catch(function(err) { console.log('[PWA] SW failed:', err); });
-    }
-    // Safety timeout: hide loading screen after 4 seconds max
-    setTimeout(function() {
-      var ls = document.getElementById('loadingScreen');
-      if (ls && !ls.classList.contains('hidden')) {
-        ls.classList.add('hidden');
-        console.warn('[PWA] Loading screen hidden by safety timeout');
-      }
-    }, 4000);
-  </script>
-  <script src="./js/app.js"></script>
+<script src="./js/app.js"></script>
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW registration failed:', err));
+  }
+</script>
 </body>
 </html>

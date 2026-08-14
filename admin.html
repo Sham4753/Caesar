@@ -3,442 +3,312 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#0a0a0a">
   <title>لوحة التحكم - مطعم القيصر</title>
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" type="image/png" href="./images/logo.png">
   <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    :root { --gold: #D4AF37; --gold-light: #F4D03F; --gold-dark: #B8860B; --black: #0a0a0a; --black-light: #121212; --black-card: #1a1a1a; --black-hover: #1e1e1e; --gray: #888; --gray-dark: #444; --gray-light: #ccc; --white: #f5f5f5; --danger: #e74c3c; --success: #27ae60; --info: #3498db; --radius: 14px; --radius-sm: 10px; --transition: all 0.3s ease; }
-    body { font-family: 'Tajawal', sans-serif; background: var(--black); color: var(--white); min-height: 100vh; line-height: 1.6; }
-
-    /* Login */
-    .login-screen { position: fixed; inset: 0; background: linear-gradient(135deg, var(--black) 0%, #1a1a2e 100%); display: flex; align-items: center; justify-content: center; z-index: 99999; }
-    .login-box { background: var(--black-card); padding: 40px 30px; border-radius: var(--radius); border: 1px solid rgba(212,175,55,0.2); width: 90%; max-width: 380px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
-    .login-box .logo-icon { font-size: 56px; color: var(--gold); margin-bottom: 16px; }
-    .login-box h2 { color: var(--gold); font-size: 24px; margin-bottom: 8px; }
-    .login-box p { color: var(--gray); font-size: 13px; margin-bottom: 28px; }
-    .login-box input { width: 100%; padding: 14px 16px; border-radius: var(--radius-sm); border: 1px solid var(--gray-dark); background: var(--black); color: var(--white); font-family: inherit; font-size: 16px; margin-bottom: 16px; text-align: center; letter-spacing: 2px; }
-    .login-box input:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(212,175,55,0.2); }
-    .login-box button { width: 100%; padding: 14px; border-radius: var(--radius-sm); background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: var(--black); border: none; font-family: inherit; font-size: 16px; font-weight: 800; cursor: pointer; transition: var(--transition); }
-    .login-box button:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(212,175,55,0.3); }
-    .login-error { color: var(--danger); margin-top: 12px; font-size: 13px; display: none; }
-    .login-hint { color: var(--gray-dark); font-size: 12px; margin-top: 16px; }
-
-    /* Layout */
-    .admin-layout { display: none; }
-    .admin-layout.active { display: block; }
-
-    /* Sidebar */
-    .sidebar { width: 260px; background: var(--black-light); min-height: 100vh; position: fixed; right: 0; top: 0; z-index: 100; border-left: 1px solid rgba(212,175,55,0.1); overflow-y: auto; transition: transform 0.3s; }
-    .sidebar-header { padding: 24px 20px; border-bottom: 1px solid rgba(212,175,55,0.1); display: flex; align-items: center; gap: 12px; }
-    .sidebar-header i { font-size: 32px; color: var(--gold); }
-    .sidebar-header h3 { color: var(--gold); font-size: 18px; }
-    .sidebar-header span { color: var(--gray); font-size: 11px; }
-    .sidebar-menu { padding: 12px 0; }
-    .sidebar-menu a { display: flex; align-items: center; gap: 12px; padding: 12px 20px; color: var(--gray); text-decoration: none; font-size: 14px; font-weight: 600; border-right: 3px solid transparent; transition: var(--transition); }
-    .sidebar-menu a:hover, .sidebar-menu a.active { background: var(--black-card); color: var(--gold); border-right-color: var(--gold); }
-    .sidebar-menu a i { width: 22px; text-align: center; }
-
-    /* Main */
-    .main-content { margin-right: 260px; min-height: 100vh; }
-    .top-bar { background: var(--black-light); padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(212,175,55,0.1); position: sticky; top: 0; z-index: 50; }
-    .top-bar h1 { font-size: 20px; color: var(--gold); display: flex; align-items: center; gap: 10px; }
-    .top-actions { display: flex; gap: 8px; }
-    .top-actions button { width: 38px; height: 38px; border-radius: 10px; background: var(--black-card); border: 1px solid var(--gray-dark); color: var(--gray); font-size: 15px; cursor: pointer; transition: var(--transition); display: flex; align-items: center; justify-content: center; }
-    .top-actions button:hover { border-color: var(--gold); color: var(--gold); }
-    .mobile-toggle { display: none; }
-    .content-area { padding: 24px; max-width: 1000px; }
-
-    /* Stats */
-    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .stat-card { background: var(--black-card); border-radius: var(--radius); padding: 20px; border: 1px solid rgba(212,175,55,0.08); display: flex; align-items: center; gap: 14px; }
-    .stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-    .stat-icon.gold { background: rgba(212,175,55,0.1); color: var(--gold); }
-    .stat-icon.green { background: rgba(39,174,96,0.1); color: var(--success); }
-    .stat-icon.blue { background: rgba(52,152,219,0.1); color: var(--info); }
-    .stat-icon.red { background: rgba(231,76,60,0.1); color: var(--danger); }
-    .stat-info h4 { font-size: 12px; color: var(--gray); font-weight: 500; }
-    .stat-info p { font-size: 26px; font-weight: 800; color: var(--white); }
-
-    /* Panels */
-    .panel { background: var(--black-card); border-radius: var(--radius); border: 1px solid rgba(212,175,55,0.08); margin-bottom: 20px; overflow: hidden; }
-    .panel-header { padding: 18px 20px; border-bottom: 1px solid rgba(212,175,55,0.1); display: flex; align-items: center; justify-content: space-between; }
-    .panel-header h3 { font-size: 16px; font-weight: 800; color: var(--gold); display: flex; align-items: center; gap: 10px; }
-    .panel-body { padding: 20px; }
-
-    /* Buttons */
-    .btn { padding: 10px 20px; border-radius: var(--radius-sm); font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 8px; transition: var(--transition); }
-    .btn-gold { background: linear-gradient(135deg, var(--gold), var(--gold-dark)); color: var(--black); }
-    .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(212,175,55,0.3); }
-    .btn-dark { background: var(--black-hover); color: var(--white); border: 1px solid var(--gray-dark); }
-    .btn-dark:hover { border-color: var(--gold); color: var(--gold); }
-    .btn-danger { background: rgba(231,76,60,0.15); color: var(--danger); }
-    .btn-danger:hover { background: var(--danger); color: var(--white); }
-    .btn-sm { padding: 8px 14px; font-size: 13px; }
-
-    /* Forms */
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 12px; font-weight: 700; color: var(--gold); margin-bottom: 6px; }
-    .form-group input, .form-group textarea, .form-group select {
-      width: 100%; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--gray-dark);
-      background: var(--black); color: var(--white); font-family: inherit; font-size: 14px; transition: var(--transition);
-    }
-    .form-group input:focus, .form-group textarea:focus, .form-group select:focus { outline: none; border-color: var(--gold); box-shadow: 0 0 0 3px rgba(212,175,55,0.15); }
-    .form-group textarea { min-height: 80px; resize: vertical; }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-
-    /* Tables */
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: 12px 14px; text-align: right; border-bottom: 1px solid rgba(212,175,55,0.08); font-size: 13px; }
-    th { background: var(--black-hover); color: var(--gold); font-weight: 700; font-size: 12px; text-transform: uppercase; }
-    tr:hover td { background: rgba(212,175,55,0.03); }
-    .item-img { width: 40px; height: 40px; border-radius: 8px; background: var(--black-hover); display: flex; align-items: center; justify-content: center; color: var(--gray-dark); }
-    .badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-    .badge-on { background: rgba(39,174,96,0.15); color: var(--success); }
-    .badge-off { background: rgba(231,76,60,0.15); color: var(--danger); }
-
-    /* Tabs */
-    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--gray-dark); margin-bottom: 20px; }
-    .tab-btn { padding: 10px 20px; background: none; border: none; font-family: inherit; font-size: 14px; font-weight: 700; color: var(--gray); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: var(--transition); }
-    .tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-
-    /* Toggle */
-    .toggle-wrap { display: flex; align-items: center; gap: 10px; }
-    .toggle { width: 44px; height: 24px; background: var(--gray-dark); border-radius: 12px; position: relative; cursor: pointer; transition: var(--transition); }
-    .toggle::after { content: ''; position: absolute; width: 20px; height: 20px; background: var(--white); border-radius: 50%; top: 2px; right: 2px; transition: var(--transition); }
-    .toggle.active { background: var(--success); }
-    .toggle.active::after { right: 22px; }
-
-    /* Modal */
-    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px; }
-    .modal-overlay.active { display: flex; }
-    .modal-box { background: var(--black-card); border-radius: var(--radius); width: 90%; max-width: 550px; max-height: 90vh; overflow-y: auto; border: 1px solid rgba(212,175,55,0.15); animation: modalIn 0.3s ease; }
-    @keyframes modalIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    .modal-header { padding: 18px 20px; border-bottom: 1px solid rgba(212,175,55,0.1); display: flex; align-items: center; justify-content: space-between; }
-    .modal-header h3 { font-size: 16px; color: var(--gold); }
-    .modal-close { background: none; border: none; color: var(--gray); font-size: 18px; cursor: pointer; }
-    .modal-body { padding: 20px; }
-    .modal-footer { padding: 16px 20px; border-top: 1px solid rgba(212,175,55,0.1); display: flex; justify-content: flex-end; gap: 10px; }
-
-    /* Search */
-    .search-box { position: relative; margin-bottom: 16px; }
-    .search-box input { width: 100%; padding: 12px 14px 12px 40px; border-radius: var(--radius-sm); border: 1px solid var(--gray-dark); background: var(--black); color: var(--white); font-family: inherit; font-size: 14px; }
-    .search-box i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--gray-dark); }
-
-    /* Toast */
-    .toast-container { position: fixed; top: 20px; left: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
-    .toast { background: var(--black-card); border: 1px solid var(--gold); border-radius: var(--radius-sm); padding: 14px 18px; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 600; animation: toastIn 0.3s ease; }
-    .toast.error { border-color: var(--danger); }
-    .toast.success { border-color: var(--success); }
-    @keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
-    /* Empty */
-    .empty-state { text-align: center; padding: 50px 20px; color: var(--gray-dark); }
-    .empty-state i { font-size: 48px; margin-bottom: 12px; }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .sidebar { transform: translateX(100%); }
-      .sidebar.open { transform: translateX(0); }
-      .main-content { margin-right: 0; }
-      .mobile-toggle { display: flex; }
-      .form-row { grid-template-columns: 1fr; }
-      .stats-grid { grid-template-columns: 1fr 1fr; }
-      .content-area { padding: 16px; }
-    }
-  </style>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
-<script>
-const firebaseConfig = {
-  apiKey: "AIzaSyDkm_7B-gaoRcnv9YICglkdbeWDuMIpj0U",
-  authDomain: "caesar-restaurant-4753.firebaseapp.com",
-  projectId: "caesar-restaurant-4753",
-  storageBucket: "caesar-restaurant-4753.firebasestorage.app",
-  messagingSenderId: "854904444247",
-  appId: "1:854904444247:web:be4ab39123bd6925c4da12"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-</script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="./css/style.css">
 </head>
 <body>
-  <!-- Login -->
-  <div class="login-screen" id="loginScreen">
-    <div class="login-box">
-      <div class="logo-icon"><i class="fas fa-crown"></i></div>
-      <h2>لوحة تحكم القيصر</h2>
-      <p>تسجيل الدخول للوصول إلى لوحة التحكم</p>
-      <input type="password" id="adminPassword" placeholder="••••••" onkeypress="if(event.key==='Enter')doLogin()">
-      <button onclick="doLogin()"><i class="fas fa-sign-in-alt"></i> دخول</button>
-      <p class="login-error" id="loginError">كلمة المرور غير صحيحة</p>
-      <p class="login-hint">الافتراضية: admin123</p>
+
+<!-- Login Screen -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <img src="./images/logo.png" alt="القيصر" style="width:80px;height:80px;border-radius:50%;border:2px solid #D4AF37;margin-bottom:16px;">
+    <h2>👑 لوحة تحكم القيصر</h2>
+    <p>أدخل كلمة المرور للوصول إلى الإعدادات</p>
+    <input type="password" id="adminPassword" placeholder="كلمة المرور" onkeydown="if(event.key==='Enter')doLogin()">
+    <button onclick="doLogin()"><i class="fas fa-lock"></i> دخول</button>
+    <div id="loginError" class="login-error">كلمة المرور غير صحيحة</div>
+    <p style="margin-top:16px;font-size:12px;color:#888;">الافتراضية: admin123</p>
+  </div>
+</div>
+
+<!-- Admin Layout -->
+<div id="adminLayout" class="admin-layout">
+  <!-- Mobile Menu Toggle -->
+  <button class="menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+
+  <!-- Sidebar -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-logo">
+      <img src="./images/logo.png" alt="القيصر">
+      <h3>القيصر</h3>
+    </div>
+    <ul class="sidebar-menu">
+      <li><a href="#" class="active" onclick="showSection('dashboard', this)"><i class="fas fa-tachometer-alt"></i> لوحة التحكم</a></li>
+      <li><a href="#" onclick="showSection('menu', this)"><i class="fas fa-utensils"></i> إدارة القائمة</a></li>
+      <li><a href="#" onclick="showSection('categories', this)"><i class="fas fa-tags"></i> التصنيفات</a></li>
+      <li><a href="#" onclick="showSection('offers', this)"><i class="fas fa-fire"></i> العروض</a></li>
+      <li><a href="#" onclick="showSection('zones', this)"><i class="fas fa-map-marker-alt"></i> المناطق</a></li>
+      <li><a href="#" onclick="showSection('settings', this)"><i class="fas fa-cog"></i> الإعدادات</a></li>
+      <li style="margin-top:20px;border-top:1px solid #333;padding-top:10px;"><a href="#" onclick="exportData()"><i class="fas fa-download"></i> تصدير النسخة</a></li>
+      <li><a href="#" onclick="importData()"><i class="fas fa-upload"></i> استيراد النسخة</a></li>
+      <li><a href="#" style="color:#e74c3c;" onclick="resetData()"><i class="fas fa-trash-alt"></i> إعادة التعيين</a></li>
+      <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> خروج</a></li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="page-header">
+      <h2 id="page-title"><i class="fas fa-tachometer-alt"></i> لوحة التحكم</h2>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard-section" class="section-content">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <h3 id="stat-items">0</h3>
+          <p>صنف في القائمة</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="stat-cats">0</h3>
+          <p>تصنيف</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="stat-offers">0</h3>
+          <p>عرض خاص</p>
+        </div>
+        <div class="stat-card">
+          <h3 id="stat-zones">0</h3>
+          <p>منطقة توصيل</p>
+        </div>
+      </div>
+      <div style="background:var(--black-card);border-radius:16px;padding:20px;border:1px solid rgba(212,175,55,0.1);">
+        <h3 style="color:var(--gold);margin-bottom:12px;"><i class="fas fa-info-circle"></i> نصائح سريعة</h3>
+        <ul style="color:var(--gray);font-size:14px;line-height:2;">
+          <li>أضف أصنافك مع الصور والأسعار من قسم "إدارة القائمة"</li>
+          <li>حدد مناطق التوصيل وكلفتها من قسم "المناطق"</li>
+          <li>أنشئ عروضاً خاصة للزبائن من قسم "العروض"</li>
+          <li>صدّر نسخة احتياطية قبل أي تعديل كبير</li>
+          <li>جميع البيانات تُحفظ في المتصفح (localStorage)</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Menu -->
+    <div id="menu-section" class="section-content" style="display:none;">
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+        <input type="text" id="menuSearch" placeholder="🔍 ابحث في القائمة..." oninput="renderMenuTable()" style="flex:1;min-width:200px;padding:12px 16px;border-radius:10px;border:1px solid var(--gray-dark);background:var(--black);color:var(--white);font-family:inherit;">
+        <button class="btn btn-primary" onclick="openItemModal()"><i class="fas fa-plus"></i> إضافة صنف</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>الصورة</th>
+              <th>الاسم</th>
+              <th>التصنيف</th>
+              <th>السعر</th>
+              <th>الحالة</th>
+              <th>إجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="menuTableBody"></tbody>
+        </table>
+      </div>
+      <div id="menuEmpty" class="empty-state" style="display:none;">
+        <i class="fas fa-utensils"></i>
+        <h4>لا توجد أصناف</h4>
+        <p>أضف صنفاً جديداً للبدء</p>
+      </div>
+    </div>
+
+    <!-- Categories -->
+    <div id="categories-section" class="section-content" style="display:none;">
+      <div style="margin-bottom:16px;">
+        <button class="btn btn-primary" onclick="openCategoryModal()"><i class="fas fa-plus"></i> إضافة تصنيف</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>الاسم</th><th>الأيقونة</th><th>الأصناف</th><th>إجراءات</th></tr>
+          </thead>
+          <tbody id="categoriesTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Offers -->
+    <div id="offers-section" class="section-content" style="display:none;">
+      <div style="margin-bottom:16px;">
+        <button class="btn btn-primary" onclick="openOfferModal()"><i class="fas fa-plus"></i> إضافة عرض</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>الصورة</th><th>العنوان</th><th>السعر</th><th>الحالة</th><th>إجراءات</th></tr>
+          </thead>
+          <tbody id="offersTableBody"></tbody>
+        </table>
+      </div>
+      <div id="offersEmpty" class="empty-state" style="display:none;">
+        <i class="fas fa-fire"></i>
+        <h4>لا توجد عروض</h4>
+        <p>أضف عرضاً خاصاً للزبائن</p>
+      </div>
+    </div>
+
+    <!-- Zones -->
+    <div id="zones-section" class="section-content" style="display:none;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="openZoneModal()"><i class="fas fa-plus"></i> إضافة منطقة</button>
+        <div style="display:flex;align-items:center;gap:8px;margin-right:auto;">
+          <span id="deliveryStatusText">التوصيل مفعل ✅</span>
+          <div id="deliveryToggleBtn" class="toggle-switch active" onclick="toggleDelivery()"></div>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>المنطقة</th><th>كلفة التوصيل</th><th>إجراءات</th></tr>
+          </thead>
+          <tbody id="zonesTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="settings-section" class="section-content" style="display:none;">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="showTab('general', this)">عام</button>
+        <button class="tab-btn" onclick="showTab('contact', this)">التواصل</button>
+        <button class="tab-btn" onclick="showTab('social', this)">السوشال</button>
+        <button class="tab-btn" onclick="showTab('security', this)">الأمان</button>
+      </div>
+
+      <div id="tab-general" class="tab-content active">
+        <div class="form-group"><label>اسم المطعم</label><input type="text" id="site-name"></div>
+        <div class="form-group"><label>العنوان الفرعي</label><input type="text" id="site-subtitle"></div>
+        <div class="form-group"><label>الوصف</label><textarea id="site-desc"></textarea></div>
+        <div class="form-group"><label>نص شريط التنبيه</label><input type="text" id="site-alert"></div>
+        <div class="form-group"><label>ساعات العمل</label><input type="text" id="site-hours"></div>
+        <div class="form-group"><label>العنوان</label><input type="text" id="site-address"></div>
+      </div>
+
+      <div id="tab-contact" class="tab-content">
+        <div class="form-group"><label>الهاتف الرئيسي</label><input type="text" id="site-phone"></div>
+        <div class="form-group"><label>رقم الواتساب</label><input type="text" id="site-whatsapp"></div>
+        <div class="form-group"><label>الهاتف الثانوي</label><input type="text" id="site-phone2"></div>
+        <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="site-email"></div>
+      </div>
+
+      <div id="tab-social" class="tab-content">
+        <div class="form-group"><label>Facebook</label><input type="url" id="social-facebook"></div>
+        <div class="form-group"><label>Instagram</label><input type="url" id="social-instagram"></div>
+        <div class="form-group"><label>Twitter / X</label><input type="url" id="social-twitter"></div>
+        <div class="form-group"><label>TikTok</label><input type="url" id="social-tiktok"></div>
+        <div class="form-group"><label>Snapchat</label><input type="url" id="social-snapchat"></div>
+        <div class="form-group"><label>YouTube</label><input type="url" id="social-youtube"></div>
+      </div>
+
+      <div id="tab-security" class="tab-content">
+        <div class="form-group"><label>كلمة المرور الجديدة</label><input type="password" id="new-password" placeholder="اتركها فارغة إذا لم ترغب بالتغيير"></div>
+        <div class="form-group"><label>تأكيد كلمة المرور</label><input type="password" id="confirm-password"></div>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:16px;"><i class="fas fa-save"></i> حفظ الإعدادات</button>
+    </div>
+  </main>
+</div>
+
+<!-- Item Modal -->
+<div id="itemModal" class="modal-overlay" onclick="if(event.target===this)closeItemModal();">
+  <div class="modal-box">
+    <h3 id="itemModalTitle"><i class="fas fa-plus"></i> إضافة صنف جديد</h3>
+    <input type="hidden" id="item-id">
+    <div class="form-group"><label>اسم الصنف *</label><input type="text" id="item-name"></div>
+    <div class="form-row">
+      <div class="form-group"><label>السعر (ل.س) *</label><input type="number" id="item-price" min="1"></div>
+      <div class="form-group"><label>التصنيف *</label><select id="item-category"><option value="">اختر التصنيف</option></select></div>
+    </div>
+    <div class="form-group"><label>الوصف</label><textarea id="item-desc"></textarea></div>
+    <div class="form-group">
+      <label>الصورة</label>
+      <input type="file" accept="image/*" onchange="handleImageUpload(this, 'item-preview', 'item-image')" style="display:none;" id="itemFileInput">
+      <label for="itemFileInput" class="image-upload-btn"><i class="fas fa-cloud-upload-alt"></i> اضغط لرفع صورة من الجوال</label>
+      <input type="hidden" id="item-image">
+      <img id="item-preview" class="image-preview-admin">
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <span>متاح للطلب</span>
+      <div id="item-active-toggle" class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary" onclick="saveItem()" style="flex:1;"><i class="fas fa-save"></i> حفظ</button>
+      <button class="btn btn-dark" onclick="closeItemModal()" style="flex:1;"><i class="fas fa-times"></i> إلغاء</button>
     </div>
   </div>
+</div>
 
-  <!-- Admin Layout -->
-  <div class="admin-layout" id="adminLayout">
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <i class="fas fa-crown"></i>
-        <div>
-          <h3>القيصر</h3>
-          <span>لوحة التحكم</span>
-        </div>
-      </div>
-      <nav class="sidebar-menu">
-        <a href="#" class="active" onclick="showSection('dashboard', this)"><i class="fas fa-tachometer-alt"></i> الرئيسية</a>
-        <a href="#" onclick="showSection('menu', this)"><i class="fas fa-utensils"></i> إدارة القائمة</a>
-        <a href="#" onclick="showSection('categories', this)"><i class="fas fa-tags"></i> التصنيفات</a>
-        <a href="#" onclick="showSection('offers', this)"><i class="fas fa-fire"></i> العروض</a>
-        <a href="#" onclick="showSection('zones', this)"><i class="fas fa-map-marker-alt"></i> المناطق والتوصيل</a>
-        <a href="#" onclick="showSection('settings', this)"><i class="fas fa-cog"></i> إعدادات الموقع</a>
-        <a href="./index.html" target="_blank"><i class="fas fa-eye"></i> معاينة الموقع</a>
-        <a href="#" onclick="logout()" style="color:var(--danger)"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</a>
-      </nav>
-    </aside>
-
-    <main class="main-content">
-      <div class="top-bar">
-        <h1 id="page-title"><i class="fas fa-tachometer-alt"></i> لوحة التحكم</h1>
-        <div class="top-actions">
-          <button class="mobile-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-          <button onclick="exportData()" title="تصدير"><i class="fas fa-download"></i></button>
-          <button onclick="importData()" title="استيراد"><i class="fas fa-upload"></i></button>
-          <button onclick="resetData()" title="إعادة تعيين"><i class="fas fa-redo"></i></button>
-        </div>
-      </div>
-
-      <div class="content-area">
-        <!-- Dashboard -->
-        <div id="dashboard-section" class="section-content">
-          <div class="stats-grid">
-            <div class="stat-card"><div class="stat-icon gold"><i class="fas fa-utensils"></i></div><div class="stat-info"><h4>الأصناف</h4><p id="stat-items">0</p></div></div>
-            <div class="stat-card"><div class="stat-icon green"><i class="fas fa-tags"></i></div><div class="stat-info"><h4>التصنيفات</h4><p id="stat-cats">0</p></div></div>
-            <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-fire"></i></div><div class="stat-info"><h4>العروض</h4><p id="stat-offers">0</p></div></div>
-            <div class="stat-card"><div class="stat-icon red"><i class="fas fa-map-marker-alt"></i></div><div class="stat-info"><h4>المناطق</h4><p id="stat-zones">0</p></div></div>
-          </div>
-          <div class="panel">
-            <div class="panel-header"><h3><i class="fas fa-info-circle"></i> معلومات سريعة</h3></div>
-            <div class="panel-body">
-              <p style="color:var(--gray-light);line-height:2">
-                مرحباً بك في لوحة تحكم <strong style="color:var(--gold)">مطعم القيصر</strong>! 👑<br><br>
-                • أضف أصنافك مع الصور والأسعار<br>
-                • حدد مناطق التوصيل وكلفتها<br>
-                • أنشئ عروضاً خاصة للزبائن<br>
-                • صدر نسخة احتياطية قبل أي تعديل كبير<br><br>
-                <span style="color:var(--gray);font-size:12px">جميع البيانات تُحفظ في المتصفح (localStorage)</span>
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Menu -->
-        <div id="menu-section" class="section-content" style="display:none">
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-utensils"></i> إدارة القائمة</h3>
-              <button class="btn btn-gold btn-sm" onclick="openItemModal()"><i class="fas fa-plus"></i> إضافة صنف</button>
-            </div>
-            <div class="panel-body">
-              <div class="search-box"><i class="fas fa-search"></i><input type="text" id="menuSearch" placeholder="ابحث في القائمة..." oninput="renderMenuTable()"></div>
-              <div class="table-wrap"><table><thead><tr><th>#</th><th>الصورة</th><th>الاسم</th><th>التصنيف</th><th>السعر</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody id="menuTableBody"></tbody></table></div>
-              <div class="empty-state" id="menuEmpty" style="display:none"><i class="fas fa-utensils"></i><h4>لا توجد أصناف</h4><p>اضغط "إضافة صنف" لبدء القائمة</p></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Categories -->
-        <div id="categories-section" class="section-content" style="display:none">
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-tags"></i> التصنيفات</h3>
-              <button class="btn btn-gold btn-sm" onclick="openCategoryModal()"><i class="fas fa-plus"></i> إضافة</button>
-            </div>
-            <div class="panel-body">
-              <div class="table-wrap"><table><thead><tr><th>#</th><th>الاسم</th><th>الأيقونة</th><th>الأصناف</th><th>الإجراءات</th></tr></thead><tbody id="categoriesTableBody"></tbody></table></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Offers -->
-        <div id="offers-section" class="section-content" style="display:none">
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-fire"></i> العروض الخاصة</h3>
-              <button class="btn btn-gold btn-sm" onclick="openOfferModal()"><i class="fas fa-plus"></i> إضافة عرض</button>
-            </div>
-            <div class="panel-body">
-              <div class="table-wrap"><table><thead><tr><th>#</th><th>الصورة</th><th>العنوان</th><th>السعر</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody id="offersTableBody"></tbody></table></div>
-              <div class="empty-state" id="offersEmpty" style="display:none"><i class="fas fa-fire"></i><h4>لا توجد عروض</h4></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Zones -->
-        <div id="zones-section" class="section-content" style="display:none">
-          <div class="panel">
-            <div class="panel-header">
-              <h3><i class="fas fa-map-marker-alt"></i> مناطق التوصيل</h3>
-              <button class="btn btn-gold btn-sm" onclick="openZoneModal()"><i class="fas fa-plus"></i> إضافة منطقة</button>
-            </div>
-            <div class="panel-body">
-              <div class="form-group" style="margin-bottom:20px">
-                <label>حالة التوصيل</label>
-                <div class="toggle-wrap">
-                  <div class="toggle" id="deliveryToggleBtn" onclick="toggleDelivery()"></div>
-                  <span id="deliveryStatusText">التفعيل/الإيقاف</span>
-                </div>
-              </div>
-              <div class="table-wrap"><table><thead><tr><th>#</th><th>المنطقة</th><th>كلفة التوصيل</th><th>الإجراءات</th></tr></thead><tbody id="zonesTableBody"></tbody></table></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Settings -->
-        <div id="settings-section" class="section-content" style="display:none">
-          <div class="panel">
-            <div class="panel-header"><h3><i class="fas fa-cog"></i> إعدادات الموقع</h3></div>
-            <div class="panel-body">
-              <div class="tabs">
-                <button class="tab-btn active" onclick="showTab('general', this)">عام</button>
-                <button class="tab-btn" onclick="showTab('contact', this)">التواصل</button>
-                <button class="tab-btn" onclick="showTab('social', this)">مواقع التواصل</button>
-                <button class="tab-btn" onclick="showTab('security', this)">الأمان</button>
-              </div>
-              <div id="tab-general" class="tab-content active">
-                <div class="form-row">
-                  <div class="form-group"><label>اسم المطعم</label><input type="text" id="site-name"></div>
-                  <div class="form-group"><label>العنوان الفرعي</label><input type="text" id="site-subtitle"></div>
-                </div>
-                <div class="form-group"><label>وصف المطعم</label><textarea id="site-desc"></textarea></div>
-                <div class="form-group"><label>نص شريط التنبيه</label><input type="text" id="site-alert"></div>
-                <div class="form-row">
-                  <div class="form-group"><label>العنوان</label><input type="text" id="site-address"></div>
-                  <div class="form-group"><label>ساعات العمل</label><input type="text" id="site-hours"></div>
-                </div>
-              </div>
-              <div id="tab-contact" class="tab-content">
-                <div class="form-row">
-                  <div class="form-group"><label>رقم الهاتف</label><input type="tel" id="site-phone"></div>
-                  <div class="form-group"><label>رقم واتساب</label><input type="tel" id="site-whatsapp"></div>
-                </div>
-                <div class="form-group"><label>رقم ثانوي</label><input type="tel" id="site-phone2"></div>
-                <div class="form-group"><label>البريد الإلكتروني</label><input type="email" id="site-email"></div>
-              </div>
-              <div id="tab-social" class="tab-content">
-                <div class="form-group"><label><i class="fab fa-facebook"></i> فيسبوك</label><input type="url" id="social-facebook"></div>
-                <div class="form-group"><label><i class="fab fa-instagram"></i> انستغرام</label><input type="url" id="social-instagram"></div>
-                <div class="form-group"><label><i class="fab fa-twitter"></i> تويتر</label><input type="url" id="social-twitter"></div>
-                <div class="form-group"><label><i class="fab fa-tiktok"></i> تيك توك</label><input type="url" id="social-tiktok"></div>
-                <div class="form-group"><label><i class="fab fa-snapchat"></i> سناب شات</label><input type="url" id="social-snapchat"></div>
-                <div class="form-group"><label><i class="fab fa-youtube"></i> يوتيوب</label><input type="url" id="social-youtube"></div>
-              </div>
-              <div id="tab-security" class="tab-content">
-                <div class="form-group"><label>تغيير كلمة المرور</label><input type="password" id="new-password" placeholder="كلمة المرور الجديدة"></div>
-                <div class="form-group"><label>تأكيد كلمة المرور</label><input type="password" id="confirm-password" placeholder="تأكيد كلمة المرور"></div>
-              </div>
-              <div style="margin-top:20px"><button class="btn btn-gold" onclick="saveSettings()"><i class="fas fa-save"></i> حفظ الإعدادات</button></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <!-- Item Modal -->
-  <div class="modal-overlay" id="itemModal">
-    <div class="modal-box">
-      <div class="modal-header"><h3 id="itemModalTitle"><i class="fas fa-plus"></i> إضافة صنف</h3><button class="modal-close" onclick="closeItemModal()"><i class="fas fa-times"></i></button></div>
-      <div class="modal-body">
-        <input type="hidden" id="item-id">
-        <div class="form-row">
-          <div class="form-group"><label>اسم الصنف *</label><input type="text" id="item-name"></div>
-          <div class="form-group"><label>السعر (ل.س) *</label><input type="number" id="item-price" min="0"></div>
-        </div>
-        <div class="form-group"><label>التصنيف *</label><select id="item-category"><option value="">اختر التصنيف</option></select></div>
-        <div class="form-group"><label>الوصف</label><textarea id="item-desc"></textarea></div>
-        <div class="form-group">
-                    <label>الصورة</label>
-                    <label style="display:block;cursor:pointer;margin-bottom:10px">
-                      <input type="file" id="item-image-file" accept="image/*" style="display:none" onchange="handleImageUpload(this, 'item-preview', 'item-image')">
-                      <div style="padding:16px;border:2px dashed var(--gray-dark);border-radius:10px;text-align:center;color:var(--gray);font-size:13px;transition:all 0.3s">
-                        <i class="fas fa-camera" style="display:block;font-size:28px;color:var(--gold);margin-bottom:8px"></i>
-                        اضغط لرفع صورة من الجوال
-                      </div>
-                    </label>
-                    <input type="text" id="item-image" placeholder="أو أدخل رابط URL للصورة" style="margin-bottom:10px">
-                    <img id="item-preview" style="max-width:120px;max-height:120px;border-radius:10px;display:none;border:2px solid var(--gold)">
-                  </div>
-        <div class="form-group"><label class="toggle-wrap"><div class="toggle active" id="item-active-toggle" onclick="this.classList.toggle('active')"></div><span>متاح للبيع</span></label></div>
-      </div>
-      <div class="modal-footer"><button class="btn btn-dark" onclick="closeItemModal()">إلغاء</button><button class="btn btn-gold" onclick="saveItem()"><i class="fas fa-save"></i> حفظ</button></div>
+<!-- Category Modal -->
+<div id="categoryModal" class="modal-overlay" onclick="if(event.target===this)closeCategoryModal();">
+  <div class="modal-box">
+    <h3 id="catModalTitle"><i class="fas fa-plus"></i> إضافة تصنيف</h3>
+    <input type="hidden" id="cat-id">
+    <div class="form-group"><label>اسم التصنيف *</label><input type="text" id="cat-name"></div>
+    <div class="form-group"><label>أيقونة FontAwesome (مثال: fa-tag)</label><input type="text" id="cat-icon" placeholder="fa-tag"></div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button class="btn btn-primary" onclick="saveCategory()" style="flex:1;"><i class="fas fa-save"></i> حفظ</button>
+      <button class="btn btn-dark" onclick="closeCategoryModal()" style="flex:1;"><i class="fas fa-times"></i> إلغاء</button>
     </div>
   </div>
+</div>
 
-  <!-- Category Modal -->
-  <div class="modal-overlay" id="categoryModal">
-    <div class="modal-box" style="max-width:420px">
-      <div class="modal-header"><h3 id="catModalTitle"><i class="fas fa-plus"></i> إضافة تصنيف</h3><button class="modal-close" onclick="closeCategoryModal()"><i class="fas fa-times"></i></button></div>
-      <div class="modal-body">
-        <input type="hidden" id="cat-id">
-        <div class="form-group"><label>اسم التصنيف *</label><input type="text" id="cat-name"></div>
-        <div class="form-group"><label>أيقونة FontAwesome</label><input type="text" id="cat-icon" placeholder="مثال: fa-utensils"></div>
-      </div>
-      <div class="modal-footer"><button class="btn btn-dark" onclick="closeCategoryModal()">إلغاء</button><button class="btn btn-gold" onclick="saveCategory()"><i class="fas fa-save"></i> حفظ</button></div>
+<!-- Offer Modal -->
+<div id="offerModal" class="modal-overlay" onclick="if(event.target===this)closeOfferModal();">
+  <div class="modal-box">
+    <h3 id="offerModalTitle"><i class="fas fa-plus"></i> إضافة عرض</h3>
+    <input type="hidden" id="offer-id">
+    <div class="form-group"><label>عنوان العرض *</label><input type="text" id="offer-title"></div>
+    <div class="form-group"><label>الوصف</label><textarea id="offer-desc"></textarea></div>
+    <div class="form-row">
+      <div class="form-group"><label>السعر الجديد (ل.س) *</label><input type="number" id="offer-price" min="1"></div>
+      <div class="form-group"><label>السعر القديم (ل.س)</label><input type="number" id="offer-oldprice" min="0"></div>
+    </div>
+    <div class="form-group">
+      <label>الصورة</label>
+      <input type="file" accept="image/*" onchange="handleImageUpload(this, 'offer-preview', 'offer-image')" style="display:none;" id="offerFileInput">
+      <label for="offerFileInput" class="image-upload-btn"><i class="fas fa-cloud-upload-alt"></i> اضغط لرفع صورة من الجوال</label>
+      <input type="hidden" id="offer-image">
+      <img id="offer-preview" class="image-preview-admin">
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+      <span>نشط</span>
+      <div id="offer-active-toggle" class="toggle-switch active" onclick="this.classList.toggle('active')"></div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-primary" onclick="saveOffer()" style="flex:1;"><i class="fas fa-save"></i> حفظ</button>
+      <button class="btn btn-dark" onclick="closeOfferModal()" style="flex:1;"><i class="fas fa-times"></i> إلغاء</button>
     </div>
   </div>
+</div>
 
-  <!-- Offer Modal -->
-  <div class="modal-overlay" id="offerModal">
-    <div class="modal-box">
-      <div class="modal-header"><h3 id="offerModalTitle"><i class="fas fa-plus"></i> إضافة عرض</h3><button class="modal-close" onclick="closeOfferModal()"><i class="fas fa-times"></i></button></div>
-      <div class="modal-body">
-        <input type="hidden" id="offer-id">
-        <div class="form-group"><label>عنوان العرض *</label><input type="text" id="offer-title"></div>
-        <div class="form-group"><label>الوصف</label><textarea id="offer-desc"></textarea></div>
-        <div class="form-row">
-          <div class="form-group"><label>السعر الجديد (ل.س) *</label><input type="number" id="offer-price" min="0"></div>
-          <div class="form-group"><label>السعر القديم</label><input type="number" id="offer-oldprice" min="0"></div>
-        </div>
-        <div class="form-group">
-                    <label>الصورة</label>
-                    <div style="display:flex;gap:10px;align-items:center;margin-bottom:8px">
-                      <label style="flex:1;cursor:pointer">
-                        <input type="file" id="offer-image-file" accept="image/*" style="display:none">
-                        <div style="padding:12px;border:2px dashed var(--gray-dark);border-radius:10px;text-align:center;color:var(--gray);font-size:13px">
-                          <i class="fas fa-camera" style="display:block;font-size:24px;color:var(--gold);margin-bottom:6px"></i>
-                          اضغط لرفع صورة من الجوال
-                        </div>
-                      </label>
-                    </div>
-                    <input type="text" id="offer-image" placeholder="أو أدخل رابط URL للصورة" style="margin-bottom:8px">
-                    <img id="offer-preview" style="max-width:120px;max-height:120px;border-radius:10px;display:none;border:2px solid var(--gold)">
-                  </div>
-        <div class="form-group"><label class="toggle-wrap"><div class="toggle active" id="offer-active-toggle" onclick="this.classList.toggle('active')"></div><span>عرض نشط</span></label></div>
-      </div>
-      <div class="modal-footer"><button class="btn btn-dark" onclick="closeOfferModal()">إلغاء</button><button class="btn btn-gold" onclick="saveOffer()"><i class="fas fa-save"></i> حفظ</button></div>
+<!-- Zone Modal -->
+<div id="zoneModal" class="modal-overlay" onclick="if(event.target===this)closeZoneModal();">
+  <div class="modal-box">
+    <h3 id="zoneModalTitle"><i class="fas fa-plus"></i> إضافة منطقة</h3>
+    <input type="hidden" id="zone-id">
+    <div class="form-group"><label>اسم المنطقة *</label><input type="text" id="zone-name"></div>
+    <div class="form-group"><label>كلفة التوصيل (ل.س) *</label><input type="number" id="zone-fee" min="0"></div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button class="btn btn-primary" onclick="saveZone()" style="flex:1;"><i class="fas fa-save"></i> حفظ</button>
+      <button class="btn btn-dark" onclick="closeZoneModal()" style="flex:1;"><i class="fas fa-times"></i> إلغاء</button>
     </div>
   </div>
+</div>
 
-  <!-- Zone Modal -->
-  <div class="modal-overlay" id="zoneModal">
-    <div class="modal-box" style="max-width:420px">
-      <div class="modal-header"><h3 id="zoneModalTitle"><i class="fas fa-plus"></i> إضافة منطقة</h3><button class="modal-close" onclick="closeZoneModal()"><i class="fas fa-times"></i></button></div>
-      <div class="modal-body">
-        <input type="hidden" id="zone-id">
-        <div class="form-group"><label>اسم المنطقة *</label><input type="text" id="zone-name"></div>
-        <div class="form-group"><label>كلفة التوصيل (ل.س) *</label><input type="number" id="zone-fee" min="0"></div>
-      </div>
-      <div class="modal-footer"><button class="btn btn-dark" onclick="closeZoneModal()">إلغاء</button><button class="btn btn-gold" onclick="saveZone()"><i class="fas fa-save"></i> حفظ</button></div>
-    </div>
-  </div>
+<!-- Toast Container -->
+<div id="toastContainer" class="toast-container"></div>
 
-  <div class="toast-container" id="toastContainer"></div>
-  <script src="./js/admin.js"></script>
+<!-- Firebase SDK (optional) -->
+<!-- <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script> -->
+<!-- <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script> -->
+<!-- <script> const firebaseConfig = { ... }; firebase.initializeApp(firebaseConfig); const db = firebase.firestore(); </script> -->
+
+<script src="./js/admin.js"></script>
 </body>
 </html>

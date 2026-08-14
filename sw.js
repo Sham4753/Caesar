@@ -1,7 +1,6 @@
-// Service Worker - مطعم القيصر (مسارات نسبية للنشر على Firebase/GitHub Pages)
-const CACHE_NAME = 'alqaysar-v2';
-
-// Use relative paths (./) for compatibility with subdirectories
+// Service Worker - مطعم القيصر v2.0
+// FIXED: Better error handling, skipWaiting, cache strategies
+const CACHE_NAME = 'alqaysar-v3';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -13,16 +12,18 @@ const STATIC_ASSETS = [
   './images/logo.png'
 ];
 
-// Install - cache static assets
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
+      return cache.addAll(STATIC_ASSETS).catch(err => {
+        console.warn('Some assets failed to cache:', err);
+        // Continue even if some assets fail
+        return Promise.resolve();
+      });
     }).then(() => self.skipWaiting())
   );
 });
 
-// Activate - clean old caches
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
@@ -33,31 +34,41 @@ self.addEventListener('activate', (e) => {
   );
 });
 
-// Fetch - network first, fallback to cache
 self.addEventListener('fetch', (e) => {
   const { request } = e;
-
-  // Skip non-GET requests
   if (request.method !== 'GET') return;
-
-  // Skip external requests (Google Fonts, FontAwesome, etc.)
   if (!request.url.includes(self.location.origin)) return;
 
-  e.respondWith(
-    fetch(request).then((response) => {
-      if (response && response.status === 200) {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-      }
-      return response;
-    }).catch(() => {
-      return caches.match(request).then((cached) => {
-        if (cached) return cached;
-        // Fallback for HTML pages
-        if (request.destination === 'document') {
-          return caches.match('./index.html');
+  // For HTML pages: network first, fallback to cache
+  if (request.destination === 'document') {
+    e.respondWith(
+      fetch(request).then((response) => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         }
-        return new Response('', { status: 503 });
+        return response;
+      }).catch(() => {
+        return caches.match(request).then((cached) => {
+          return cached || caches.match('./index.html');
+        });
+      })
+    );
+    return;
+  }
+
+  // For static assets: cache first, fallback to network
+  e.respondWith(
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+      return fetch(request).then((response) => {
+        if (response && response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
+        }
+        return response;
+      }).catch(() => {
+        return new Response('', { status: 503, statusText: 'Service Unavailable' });
       });
     })
   );

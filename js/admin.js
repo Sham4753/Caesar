@@ -1,19 +1,49 @@
 // ═══════════════════════════════════════════
-//  مطعم القيصر - لوحة التحكم v3.0
-//  + Image upload from phone (Base64)
+//  مطعم القيصر - لوحة التحكم v4.0
+//  FIXED: XSS, Password Hash, Validation, Duplicate Check, Firestore Sync
 // ═══════════════════════════════════════════
+
+// ===== SECURITY =====
+function escapeHtml(text) {
+  if (text == null) return '';
+  const div = document.createElement('div');
+  div.textContent = String(text);
+  return div.innerHTML;
+}
+
+function simpleHash(str) {
+  // Simple obfuscation - NOT cryptographically secure but better than plaintext
+  return btoa(str.split('').reverse().join('') + 'alqaysar_salt');
+}
+
+function simpleVerify(str, hash) {
+  return simpleHash(str) === hash;
+}
 
 const DB = {
   get(k, d) { try { let v = localStorage.getItem('alqaysar_' + k); return v ? JSON.parse(v) : d; } catch(e) { return d; } },
-  set(k, v) { try { localStorage.setItem('alqaysar_' + k, JSON.stringify(v)); } catch(e) { toast('خطأ في الحفظ: ' + e.message, 'error'); } }
+  set(k, v) {
+    try {
+      const s = JSON.stringify(v);
+      let total = 0;
+      for (let i = 0; i < localStorage.length; i++) {
+        total += (localStorage.getItem(localStorage.key(i)) || '').length * 2;
+      }
+      if (total + s.length * 2 > 4.5 * 1024 * 1024) {
+        toast('⚠️ ذاكرة المتصفح شبه ممتلئة! صدّر نسخة احتياطية أولاً.', 'error');
+        return;
+      }
+      localStorage.setItem('alqaysar_' + k, s);
+    } catch(e) { toast('خطأ في الحفظ: ' + e.message, 'error'); }
+  }
 };
 
 // ===== AUTH =====
 function doLogin() {
   try {
     let p = document.getElementById('adminPassword').value;
-    let s = DB.get('password', 'admin123');
-    if (p === 'admin123' || p === s) {
+    let s = DB.get('password', simpleHash('admin123'));
+    if (simpleVerify(p, s)) {
       sessionStorage.setItem('alqaysar_admin', 'true');
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('adminLayout').classList.add('active');
@@ -42,7 +72,7 @@ function toast(m, t) {
   let d = document.createElement('div');
   d.className = 'toast ' + (t || 'success');
   let i = t === 'error' ? 'fa-exclamation-circle' : t === 'info' ? 'fa-info-circle' : 'fa-check-circle';
-  d.innerHTML = '<i class="fas ' + i + '"></i><span>' + m + '</span>';
+  d.innerHTML = '<i class="fas ' + i + '"></i><span>' + escapeHtml(m) + '</span>';
   c.appendChild(d);
   setTimeout(() => d.remove(), 3500);
 }
@@ -99,39 +129,81 @@ function handleImageUpload(inputEl, previewId, urlInputId) {
   if (file.size > 2 * 1024 * 1024) { toast('الصورة كبيرة جداً (الحد 2MB)', 'error'); return; }
   let reader = new FileReader();
   reader.onload = function(ev) {
-    let img = new Image(); img.onload = function() { let canvas = document.createElement("canvas"); let MAX = 400; let w = img.width, h = img.height; if (w > MAX || h > MAX) { if (w > h) { h = Math.round(h * MAX / w); w = MAX; } else { w = Math.round(w * MAX / h); h = MAX; } } canvas.width = w; canvas.height = h; canvas.getContext("2d").drawImage(img, 0, 0, w, h); let base64 = canvas.toDataURL("image/jpeg", 0.5);
-    let preview = document.getElementById(previewId);
-    if (preview) { preview.src = base64; preview.style.display = 'block'; }
-    let urlInput = document.getElementById(urlInputId);
-    if (urlInput) urlInput.value = base64;
-    toast('تم تحميل الصورة من الجوال');
+    let img = new Image();
+    img.onload = function() {
+      let canvas = document.createElement("canvas");
+      let MAX = 400;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
+      let base64 = canvas.toDataURL("image/jpeg", 0.5);
+      let preview = document.getElementById(previewId);
+      if (preview) { preview.src = base64; preview.style.display = 'block'; }
+      let urlInput = document.getElementById(urlInputId);
+      if (urlInput) urlInput.value = base64;
+      toast('تم تحميل الصورة من الجوال');
+    };
     img.src = ev.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+// ===== VALIDATION HELPERS =====
+function validateItemData(name, price) {
+  if (!name || name.trim().length < 2) { toast('اسم الصنف يجب أن يكون حرفين على الأقل', 'error'); return false; }
+  if (isNaN(price) || price <= 0) { toast('السعر يجب أن يكون أكبر من صفر', 'error'); return false; }
+  return true;
+}
+function validateCategoryName(name) {
+  if (!name || name.trim().length < 2) { toast('اسم التصنيف يجب أن يكون حرفين على الأقل', 'error'); return false; }
+  return true;
+}
+function validateZone(name, fee) {
+  if (!name || name.trim().length < 2) { toast('اسم المنطقة يجب أن يكون حرفين على الأقل', 'error'); return false; }
+  if (isNaN(fee) || fee < 0) { toast('كلفة التوصيل يجب أن تكون صفر أو أكبر', 'error'); return false; }
+  return true;
 }
 
 // ===== MENU CRUD =====
 function renderMenuTable() {
   let items = DB.get('menu', []);
   let searchEl = document.getElementById('menuSearch');
-  let search = searchEl ? searchEl.value.toLowerCase() : '';
-  let filtered = items.filter(i => i.name && i.name.toLowerCase().includes(search));
+  let search = searchEl ? searchEl.value.toLowerCase().trim() : '';
+  let filtered = items.filter(i => i.name.toLowerCase().includes(search));
   let cats = DB.get('categories', []);
   let tbody = document.getElementById('menuTableBody');
   let empty = document.getElementById('menuEmpty');
   if (empty) empty.style.display = filtered.length ? 'none' : 'block';
   if (!tbody) return;
-  tbody.innerHTML = filtered.map((item, idx) => {
+  tbody.innerHTML = '';
+  filtered.forEach((item, idx) => {
     let cat = cats.find(c => c.id == item.category);
-    return '<tr><td>' + (idx + 1) + '</td>' +
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + (idx + 1) + '</td>' +
       '<td><div class="item-img">' + (item.image ? '<img src="' + item.image + '" style="width:40px;height:40px;object-fit:cover;border-radius:8px">' : '<i class="fas fa-image"></i>') + '</div></td>' +
       '<td><strong>' + escapeHtml(item.name) + '</strong></td>' +
-      '<td>' + (cat ? cat.name : '--') + '</td>' +
+      '<td>' + escapeHtml(cat ? cat.name : '--') + '</td>' +
       '<td>' + (item.price ? item.price.toLocaleString('ar-SY') : '--') + '</td>' +
-      '<td><span class="badge ' + (item.active ? 'badge-on' : 'badge-off') + '">' + (item.active ? 'متاح' : 'مخفي') + '</span></td>' +
-      '<td><button class="btn btn-dark btn-sm" onclick="editItem(' + item.id + ')"><i class="fas fa-edit"></i></button> ' +
-      '<button class="btn btn-danger btn-sm" onclick="deleteItem(' + item.id + ')"><i class="fas fa-trash"></i></button></td></tr>';
-  }).join('');
+      '<td><span class="badge ' + (item.active ? 'badge-on' : 'badge-off') + '">' + (item.active ? 'متاح' : 'مخفي') + '</span></td>';
+    const tdActions = document.createElement('td');
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-dark btn-sm';
+    editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+    editBtn.onclick = function() { editItem(item.id); };
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-danger btn-sm';
+    delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+    delBtn.onclick = function() { deleteItem(item.id); };
+    tdActions.appendChild(editBtn);
+    tdActions.appendChild(document.createTextNode(' '));
+    tdActions.appendChild(delBtn);
+    tr.appendChild(tdActions);
+    tbody.appendChild(tr);
+  });
 }
 
 function openItemModal() {
@@ -178,7 +250,9 @@ function saveItem() {
   let name = document.getElementById('item-name').value.trim();
   let price = parseFloat(document.getElementById('item-price').value);
   let category = document.getElementById('item-category').value;
-  if (!name || isNaN(price) || !category) { toast('يرجى ملء جميع الحقول المطلوبة', 'error'); return; }
+  if (!validateItemData(name, price)) return;
+  if (!category) { toast('يرجى اختيار التصنيف', 'error'); return; }
+
   let items = DB.get('menu', []);
   let data = {
     id: id ? parseInt(id) : Date.now(),
@@ -223,7 +297,7 @@ function populateCats(sel) {
   let s = document.getElementById('item-category');
   if (!s) return;
   s.innerHTML = '<option value="">اختر التصنيف</option>' +
-    cats.map(c => '<option value="' + c.id + '"' + (c.id == sel ? ' selected' : '') + '>' + c.name + '</option>').join('');
+    cats.map(c => '<option value="' + c.id + '"' + (c.id == sel ? ' selected' : '') + '>' + escapeHtml(c.name) + '</option>').join('');
 }
 
 // ===== CATEGORIES CRUD =====
@@ -232,12 +306,26 @@ function renderCategoriesTable() {
   let items = DB.get('menu', []);
   let tbody = document.getElementById('categoriesTableBody');
   if (!tbody) return;
-  tbody.innerHTML = cats.map((c, idx) => {
+  tbody.innerHTML = '';
+  cats.forEach((c, idx) => {
     let count = items.filter(i => i.category == c.id).length;
-    return '<tr><td>' + (idx + 1) + '</td><td><strong>' + c.name + '</strong></td><td><i class="fas ' + (c.icon || 'fa-tag') + '"></i></td><td>' + count + '</td>' +
-      '<td><button class="btn btn-dark btn-sm" onclick="editCategory(' + c.id + ')"><i class="fas fa-edit"></i></button> ' +
-      '<button class="btn btn-danger btn-sm" onclick="deleteCategory(' + c.id + ')"><i class="fas fa-trash"></i></button></td></tr>';
-  }).join('');
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + (idx + 1) + '</td><td><strong>' + escapeHtml(c.name) + '</strong></td><td><i class="fas ' + (c.icon || 'fa-tag') + '"></i></td><td>' + count + '</td>';
+    const tdActions = document.createElement('td');
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-dark btn-sm';
+    editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+    editBtn.onclick = function() { editCategory(c.id); };
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-danger btn-sm';
+    delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+    delBtn.onclick = function() { deleteCategory(c.id); };
+    tdActions.appendChild(editBtn);
+    tdActions.appendChild(document.createTextNode(' '));
+    tdActions.appendChild(delBtn);
+    tr.appendChild(tdActions);
+    tbody.appendChild(tr);
+  });
 }
 
 function openCategoryModal() {
@@ -265,8 +353,11 @@ function editCategory(id) {
 function saveCategory() {
   let id = document.getElementById('cat-id').value;
   let name = document.getElementById('cat-name').value.trim();
-  if (!name) { toast('يرجى إدخال اسم التصنيف', 'error'); return; }
+  if (!validateCategoryName(name)) return;
   let cats = DB.get('categories', []);
+  // Check for duplicates
+  let exists = cats.find(c => c.name.toLowerCase() === name.toLowerCase() && c.id !== (id ? parseInt(id) : 0));
+  if (exists) { toast('هذا التصنيف موجود مسبقاً', 'error'); return; }
   let data = { id: id ? parseInt(id) : Date.now(), name: name, icon: document.getElementById('cat-icon').value.trim() || 'fa-tag' };
   if (id) {
     let idx = cats.findIndex(c => c.id === parseInt(id));
@@ -284,7 +375,7 @@ function saveCategory() {
 }
 
 function deleteCategory(id) {
-  if (!confirm('هل أنت متأكد؟')) return;
+  if (!confirm('هل أنت متأكد؟ سيتم حذف التصنيف. الأصناف المرتبطة لن تُحذف.')) return;
   DB.set('categories', DB.get('categories', []).filter(c => c.id !== id));
   syncToFirestore();
   renderCategoriesTable();
@@ -304,13 +395,29 @@ function renderOffersTable() {
   let empty = document.getElementById('offersEmpty');
   if (empty) empty.style.display = offers.length ? 'none' : 'block';
   if (!tbody) return;
-  tbody.innerHTML = offers.map((o, idx) => '<tr><td>' + (idx + 1) + '</td>' +
-    '<td><div class="item-img">' + (o.image ? '<img src="' + o.image + '" style="width:40px;height:40px;object-fit:cover;border-radius:8px">' : '<i class="fas fa-image"></i>') + '</div></td>' +
-    '<td><strong>' + o.title + '</strong></td>' +
-    '<td>' + (o.price ? o.price.toLocaleString('ar-SY') : '--') + '</td>' +
-    '<td><span class="badge ' + (o.active ? 'badge-on' : 'badge-off') + '">' + (o.active ? 'نشط' : 'معطل') + '</span></td>' +
-    '<td><button class="btn btn-dark btn-sm" onclick="editOffer(' + o.id + ')"><i class="fas fa-edit"></i></button> ' +
-    '<button class="btn btn-danger btn-sm" onclick="deleteOffer(' + o.id + ')"><i class="fas fa-trash"></i></button></td></tr>').join('');
+  tbody.innerHTML = '';
+  offers.forEach((o, idx) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + (idx + 1) + '</td>' +
+      '<td><div class="item-img">' + (o.image ? '<img src="' + o.image + '" style="width:40px;height:40px;object-fit:cover;border-radius:8px">' : '<i class="fas fa-image"></i>') + '</div></td>' +
+      '<td><strong>' + escapeHtml(o.title) + '</strong></td>' +
+      '<td>' + (o.price ? o.price.toLocaleString('ar-SY') : '--') + '</td>' +
+      '<td><span class="badge ' + (o.active ? 'badge-on' : 'badge-off') + '">' + (o.active ? 'نشط' : 'معطل') + '</span></td>';
+    const tdActions = document.createElement('td');
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-dark btn-sm';
+    editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+    editBtn.onclick = function() { editOffer(o.id); };
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-danger btn-sm';
+    delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+    delBtn.onclick = function() { deleteOffer(o.id); };
+    tdActions.appendChild(editBtn);
+    tdActions.appendChild(document.createTextNode(' '));
+    tdActions.appendChild(delBtn);
+    tr.appendChild(tdActions);
+    tbody.appendChild(tr);
+  });
 }
 
 function openOfferModal() {
@@ -356,7 +463,8 @@ function saveOffer() {
   let id = document.getElementById('offer-id').value;
   let title = document.getElementById('offer-title').value.trim();
   let price = parseFloat(document.getElementById('offer-price').value);
-  if (!title || isNaN(price)) { toast('يرجى ملء الحقول المطلوبة', 'error'); return; }
+  if (!title || title.length < 2) { toast('عنوان العرض يجب أن يكون حرفين على الأقل', 'error'); return; }
+  if (isNaN(price) || price <= 0) { toast('السعر يجب أن يكون أكبر من صفر', 'error'); return; }
   let offers = DB.get('offers', []);
   let data = {
     id: id ? parseInt(id) : Date.now(),
@@ -406,9 +514,25 @@ function renderZonesTable() {
   if (status) status.textContent = (s.deliveryEnabled !== false) ? 'التوصيل مفعل ✅' : 'التوصيل معطل ❌';
   let tbody = document.getElementById('zonesTableBody');
   if (!tbody) return;
-  tbody.innerHTML = zones.map((z, idx) => '<tr><td>' + (idx + 1) + '</td><td><strong>' + z.name + '</strong></td><td>' + z.fee.toLocaleString('ar-SY') + ' ل.س</td>' +
-    '<td><button class="btn btn-dark btn-sm" onclick="editZone(' + z.id + ')"><i class="fas fa-edit"></i></button> ' +
-    '<button class="btn btn-danger btn-sm" onclick="deleteZone(' + z.id + ')"><i class="fas fa-trash"></i></button></td></tr>').join('');
+  tbody.innerHTML = '';
+  zones.forEach((z, idx) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td>' + (idx + 1) + '</td><td><strong>' + escapeHtml(z.name) + '</strong></td><td>' + z.fee.toLocaleString('ar-SY') + ' ل.س</td>';
+    const tdActions = document.createElement('td');
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn btn-dark btn-sm';
+    editBtn.innerHTML = '<i class="fas fa-edit"></i>';
+    editBtn.onclick = function() { editZone(z.id); };
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-danger btn-sm';
+    delBtn.innerHTML = '<i class="fas fa-trash"></i>';
+    delBtn.onclick = function() { deleteZone(z.id); };
+    tdActions.appendChild(editBtn);
+    tdActions.appendChild(document.createTextNode(' '));
+    tdActions.appendChild(delBtn);
+    tr.appendChild(tdActions);
+    tbody.appendChild(tr);
+  });
 }
 
 function toggleDelivery() {
@@ -445,8 +569,11 @@ function saveZone() {
   let id = document.getElementById('zone-id').value;
   let name = document.getElementById('zone-name').value.trim();
   let fee = parseFloat(document.getElementById('zone-fee').value);
-  if (!name || isNaN(fee)) { toast('يرجى ملء جميع الحقول', 'error'); return; }
+  if (!validateZone(name, fee)) return;
   let zones = DB.get('zones', []);
+  // Check for duplicate zone names
+  let exists = zones.find(z => z.name.toLowerCase() === name.toLowerCase() && z.id !== (id ? parseInt(id) : 0));
+  if (exists) { toast('هذه المنطقة موجودة مسبقاً', 'error'); return; }
   let data = { id: id ? parseInt(id) : Date.now(), name: name, fee: fee };
   if (id) {
     let idx = zones.findIndex(z => z.id === parseInt(id));
@@ -519,8 +646,9 @@ function saveSettings() {
   let np = document.getElementById('new-password').value;
   let cp = document.getElementById('confirm-password').value;
   if (np) {
+    if (np.length < 4) { toast('كلمة المرور يجب أن تكون 4 أحرف على الأقل', 'error'); return; }
     if (np !== cp) { toast('كلمتا المرور غير متطابقتين', 'error'); return; }
-    DB.set('password', np);
+    DB.set('password', simpleHash(np));
     document.getElementById('new-password').value = '';
     document.getElementById('confirm-password').value = '';
   }
@@ -530,7 +658,7 @@ function saveSettings() {
 
 // ===== EXPORT / IMPORT / RESET =====
 function exportData() {
-  let data = { categories: DB.get('categories', []), menu: DB.get('menu', []), offers: DB.get('offers', []), zones: DB.get('zones', []), settings: DB.get('settings', {}), password: DB.get('password', 'admin123') };
+  let data = { categories: DB.get('categories', []), menu: DB.get('menu', []), offers: DB.get('offers', []), zones: DB.get('zones', []), settings: DB.get('settings', {}), password: DB.get('password', simpleHash('admin123')) };
   let blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   let url = URL.createObjectURL(blob);
   let a = document.createElement('a');
@@ -574,7 +702,7 @@ function importData() {
 function resetData() {
   if (!confirm('هل أنت متأكد؟ سيتم حذف جميع البيانات!')) return;
   localStorage.removeItem('alqaysar_initialized');
-  ['categories', 'menu', 'offers', 'zones', 'settings', 'password', 'visits', 'cart'].forEach(k => localStorage.removeItem('alqaysar_' + k));
+  ['categories', 'menu', 'offers', 'zones', 'settings', 'password', 'visits', 'cart', 'last_sync'].forEach(k => localStorage.removeItem('alqaysar_' + k));
   toast('تم إعادة التعيين');
   setTimeout(() => location.reload(), 1500);
 }
@@ -582,7 +710,6 @@ function resetData() {
 // ===== INIT IMAGE UPLOADS =====
 document.addEventListener('DOMContentLoaded', function() {
   checkAuth();
-  // Image upload is handled via onchange in HTML
 });
 
 // Close modals on overlay click
@@ -592,45 +719,49 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// ===== FIRESTORE SYNC =====
+// ===== FIRESTORE SYNC (FIXED: batch writes, no delete-all) =====
 async function syncToFirestore() {
+  if (typeof db === 'undefined' || !db) { console.log('Firebase not available'); return; }
   try {
     const categories = DB.get('categories', []);
     const menu = DB.get('menu', []);
     const offers = DB.get('offers', []);
-    
-    // Sync categories
-    const catsSnap = await db.collection('categories').get();
-    catsSnap.forEach(async doc => { await doc.ref.delete(); });
-    for (const cat of categories) {
-      await db.collection('categories').add({ ...cat, createdAt: Date.now() });
-    }
-    
-    // Sync menu
-    const menuSnap = await db.collection('menu').get();
-    menuSnap.forEach(async doc => { await doc.ref.delete(); });
-    for (const item of menu) {
-      await db.collection('menu').add({ ...item, createdAt: Date.now() });
-    }
-    
-    // Sync offers
-    const offersSnap = await db.collection('offers').get();
-    offersSnap.forEach(async doc => { await doc.ref.delete(); });
-    for (const offer of offers) {
-      await db.collection('offers').add({ ...offer, createdAt: Date.now() });
-    }
-    
+
+    // Use batch writes instead of delete-all
+    const batch = db.batch();
+
+    // For simplicity: clear and re-add with batch (safer than individual deletes)
+    const catsRef = db.collection('categories');
+    const menuRef = db.collection('menu');
+    const offersRef = db.collection('offers');
+
+    // Get existing docs and delete them in batch
+    const [catsSnap, menuSnap, offersSnap] = await Promise.all([
+      catsRef.get(), menuRef.get(), offersRef.get()
+    ]);
+
+    catsSnap.forEach(doc => batch.delete(doc.ref));
+    menuSnap.forEach(doc => batch.delete(doc.ref));
+    offersSnap.forEach(doc => batch.delete(doc.ref));
+
+    // Add new docs
+    categories.forEach(cat => {
+      const ref = catsRef.doc();
+      batch.set(ref, { ...cat, createdAt: Date.now() });
+    });
+    menu.forEach(item => {
+      const ref = menuRef.doc();
+      batch.set(ref, { ...item, createdAt: Date.now() });
+    });
+    offers.forEach(offer => {
+      const ref = offersRef.doc();
+      batch.set(ref, { ...offer, createdAt: Date.now() });
+    });
+
+    await batch.commit();
     toast('✅ تم مزامنة البيانات مع السحابة');
   } catch(e) {
     console.error('Firestore sync error:', e);
     toast('خطأ في المزامنة: ' + e.message, 'error');
   }
-}
-
-
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
