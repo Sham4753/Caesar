@@ -1,4 +1,4 @@
-// ═══════════════════════════════════════════
+ // ═══════════════════════════════════════════
 //  مطعم القيصر - منطق التطبيق (الزبائن)
 //  v2.0 - Fixed for Firebase/GitHub Pages hosting
 // ═══════════════════════════════════════════
@@ -226,7 +226,7 @@ function filterCategory(cat, btn) {
 
 // ===== MENU =====
 function renderMenu() {
-  const items = safeGet('menu', DEFAULT_MENU).filter(i => i.active);
+  const items = safeGet('menu', DEFAULT_MENU).filter(i => i.active !== false);
   const filtered = currentCategory === 'all' ? items : items.filter(i => i.category == currentCategory);
   const grid = document.getElementById('menuGrid');
   const empty = document.getElementById('menuEmpty');
