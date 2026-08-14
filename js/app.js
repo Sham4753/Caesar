@@ -538,6 +538,7 @@ function shouldSync() {
 }
 
 async function loadMenuFromFirestore() {
+  if (!shouldSync()) return;
   try {
     const catsSnap = await db.collection('categories').orderBy('createdAt').get();
     const itemsSnap = await db.collection('menu').orderBy('createdAt').get();
