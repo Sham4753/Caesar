@@ -115,7 +115,7 @@ function renderMenuTable() {
   let items = DB.get('menu', []);
   let searchEl = document.getElementById('menuSearch');
   let search = searchEl ? searchEl.value.toLowerCase() : '';
-  let filtered = items.filter(i => i.name.toLowerCase().includes(search));
+  let filtered = items.filter(i => i.name && i.name.toLowerCase().includes(search));
   let cats = DB.get('categories', []);
   let tbody = document.getElementById('menuTableBody');
   let empty = document.getElementById('menuEmpty');
