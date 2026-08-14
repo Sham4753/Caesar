@@ -88,24 +88,20 @@ function updateStats() {
 }
 
 // ===== IMAGE UPLOAD (Base64 from phone) =====
-function handleImageUpload(inputId, previewId, urlInputId) {
-  let input = document.getElementById(inputId);
-  if (!input) return;
-  input.addEventListener('change', function(e) {
-    let file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { toast('الصورة كبيرة جداً (الحد 2MB)', 'error'); return; }
-    let reader = new FileReader();
-    reader.onload = function(ev) {
-      let base64 = ev.target.result;
-      let preview = document.getElementById(previewId);
-      if (preview) { preview.src = base64; preview.style.display = 'block'; }
-      let urlInput = document.getElementById(urlInputId);
-      if (urlInput) urlInput.value = base64;
-      toast('تم تحميل الصورة من الجوال');
-    };
-    reader.readAsDataURL(file);
-  });
+function handleImageUpload(inputEl, previewId, urlInputId) {
+  let file = inputEl.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { toast('الصورة كبيرة جداً (الحد 2MB)', 'error'); return; }
+  let reader = new FileReader();
+  reader.onload = function(ev) {
+    let base64 = ev.target.result;
+    let preview = document.getElementById(previewId);
+    if (preview) { preview.src = base64; preview.style.display = 'block'; }
+    let urlInput = document.getElementById(urlInputId);
+    if (urlInput) urlInput.value = base64;
+    toast('تم تحميل الصورة من الجوال');
+  };
+  reader.readAsDataURL(file);
 }
 
 // ===== MENU CRUD =====
@@ -574,9 +570,7 @@ function resetData() {
 // ===== INIT IMAGE UPLOADS =====
 document.addEventListener('DOMContentLoaded', function() {
   checkAuth();
-  // Setup image upload handlers
-  handleImageUpload('item-image-file', 'item-preview', 'item-image');
-  handleImageUpload('offer-image-file', 'offer-preview', 'offer-image');
+  // Image upload is handled via onchange in HTML
 });
 
 // Close modals on overlay click

@@ -348,7 +348,18 @@
         </div>
         <div class="form-group"><label>التصنيف *</label><select id="item-category"><option value="">اختر التصنيف</option></select></div>
         <div class="form-group"><label>الوصف</label><textarea id="item-desc"></textarea></div>
-        <div class="form-group"><label>رابط الصورة</label><input type="text" id="item-image" placeholder="images/dish.jpg أو رابط URL"></div>
+        <div class="form-group">
+                    <label>الصورة</label>
+                    <label style="display:block;cursor:pointer;margin-bottom:10px">
+                      <input type="file" id="item-image-file" accept="image/*" style="display:none" onchange="handleImageUpload(this, 'item-preview', 'item-image')">
+                      <div style="padding:16px;border:2px dashed var(--gray-dark);border-radius:10px;text-align:center;color:var(--gray);font-size:13px;transition:all 0.3s">
+                        <i class="fas fa-camera" style="display:block;font-size:28px;color:var(--gold);margin-bottom:8px"></i>
+                        اضغط لرفع صورة من الجوال
+                      </div>
+                    </label>
+                    <input type="text" id="item-image" placeholder="أو أدخل رابط URL للصورة" style="margin-bottom:10px">
+                    <img id="item-preview" style="max-width:120px;max-height:120px;border-radius:10px;display:none;border:2px solid var(--gold)">
+                  </div>
         <div class="form-group"><label class="toggle-wrap"><div class="toggle active" id="item-active-toggle" onclick="this.classList.toggle('active')"></div><span>متاح للبيع</span></label></div>
       </div>
       <div class="modal-footer"><button class="btn btn-dark" onclick="closeItemModal()">إلغاء</button><button class="btn btn-gold" onclick="saveItem()"><i class="fas fa-save"></i> حفظ</button></div>
