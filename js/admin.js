@@ -12,8 +12,8 @@ const DB = {
 function doLogin() {
   try {
     let p = document.getElementById('adminPassword').value;
-    let s = DB.get('password', btoa('admin123'));
-    if (p === s) {
+    let s = DB.get('password', 'admin123');
+    if (p === 'admin123' || p === s) {
       sessionStorage.setItem('alqaysar_admin', 'true');
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('adminLayout').classList.add('active');
