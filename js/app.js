@@ -106,16 +106,18 @@ let deferredPrompt = null;
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', function() {
   try {
+    initDefaults();
+    renderAll();
+    loadCart();
+    setupPWA();
+    setTimeout(function() {
+      var ls = document.getElementById('loadingScreen');
+      if (ls) ls.classList.add('hidden');
+    }, 300);
+    // مزامنة في الخلفية بدون تعليق
     loadMenuFromFirestore().then(() => {
-      initDefaults();
       renderAll();
-      loadCart();
-      setupPWA();
-      setTimeout(function() {
-        var ls = document.getElementById('loadingScreen');
-        if (ls) ls.classList.add('hidden');
-      }, 500);
-    });
+    }).catch(e => console.log('sync skipped'));
     return;
     // Hide loading screen after everything renders
     setTimeout(function() {
@@ -532,7 +534,6 @@ document.addEventListener('click', (e) => {
 // ===== FIRESTORE =====
 async function loadMenuFromFirestore() {
   try {
-    showLoader();
     const catsSnap = await db.collection('categories').orderBy('createdAt').get();
     const itemsSnap = await db.collection('menu').orderBy('createdAt').get();
     const offersSnap = await db.collection('offers').orderBy('createdAt').get();
