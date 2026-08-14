@@ -1,11 +1,3 @@
-
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
-
 // ═══════════════════════════════════════════
 //  مطعم القيصر - لوحة التحكم v3.0
 //  + Image upload from phone (Base64)
@@ -633,4 +625,12 @@ async function syncToFirestore() {
     console.error('Firestore sync error:', e);
     toast('خطأ في المزامنة: ' + e.message, 'error');
   }
+}
+
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
 }
