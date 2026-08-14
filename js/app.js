@@ -532,6 +532,11 @@ document.addEventListener('click', (e) => {
 });
 
 // ===== FIRESTORE =====
+let lastSyncTime = localStorage.getItem('alqaysar_last_sync') || 0;
+function shouldSync() {
+  return (Date.now() - parseInt(lastSyncTime)) > 60000; // 60 ثانية
+}
+
 async function loadMenuFromFirestore() {
   try {
     const catsSnap = await db.collection('categories').orderBy('createdAt').get();
@@ -556,6 +561,7 @@ async function loadMenuFromFirestore() {
     localStorage.setItem('alqaysar_categories', JSON.stringify(categories));
     localStorage.setItem('alqaysar_menu', JSON.stringify(menu));
     localStorage.setItem('alqaysar_offers', JSON.stringify(offers));
+    localStorage.setItem('alqaysar_last_sync', Date.now().toString());
     
     renderMenu();
     hideLoader();
