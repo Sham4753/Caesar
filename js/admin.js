@@ -94,12 +94,13 @@ function handleImageUpload(inputEl, previewId, urlInputId) {
   if (file.size > 2 * 1024 * 1024) { toast('الصورة كبيرة جداً (الحد 2MB)', 'error'); return; }
   let reader = new FileReader();
   reader.onload = function(ev) {
-    let base64 = ev.target.result;
+    let img = new Image(); img.onload = function() { let canvas = document.createElement("canvas"); let MAX = 400; let w = img.width, h = img.height; if (w > MAX || h > MAX) { if (w > h) { h = Math.round(h * MAX / w); w = MAX; } else { w = Math.round(w * MAX / h); h = MAX; } } canvas.width = w; canvas.height = h; canvas.getContext("2d").drawImage(img, 0, 0, w, h); let base64 = canvas.toDataURL("image/jpeg", 0.5);
     let preview = document.getElementById(previewId);
     if (preview) { preview.src = base64; preview.style.display = 'block'; }
     let urlInput = document.getElementById(urlInputId);
     if (urlInput) urlInput.value = base64;
     toast('تم تحميل الصورة من الجوال');
+    img.src = ev.target.result;
   };
   reader.readAsDataURL(file);
 }
