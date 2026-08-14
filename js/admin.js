@@ -10,15 +10,20 @@ const DB = {
 
 // ===== AUTH =====
 function doLogin() {
-  let p = document.getElementById('adminPassword').value;
-  let s = DB.get('password', 'admin123');
-  if (p === s) {
-    sessionStorage.setItem('alqaysar_admin', 'true');
-    document.getElementById('loginScreen').style.display = 'none';
-    document.getElementById('adminLayout').classList.add('active');
-    initAdmin();
-  } else {
-    document.getElementById('loginError').style.display = 'block';
+  try {
+    let p = document.getElementById('adminPassword').value;
+    let s = DB.get('password', 'admin123');
+    if (p === s) {
+      sessionStorage.setItem('alqaysar_admin', 'true');
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('adminLayout').classList.add('active');
+      try { initAdmin(); } catch(e) { console.error('initAdmin error:', e); }
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+    }
+  } catch(e) {
+    console.error('Login error:', e);
+    alert('خطأ: ' + e.message);
   }
 }
 function logout() { sessionStorage.removeItem('alqaysar_admin'); location.reload(); }
