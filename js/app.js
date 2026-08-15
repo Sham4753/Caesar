@@ -234,7 +234,12 @@ function setupRealtimeListeners() {
   // Settings listener
   db.collection('settings').doc('main').onSnapshot((doc) => {
     if (doc.exists) {
-      liveData.settings = { ...DEFAULT_SETTINGS, ...doc.data() };
+      if (doc.exists && doc.data()) {
+        const data = doc.data();
+        if (Object.keys(data).length > 0) {
+          liveData.settings = { ...DEFAULT_SETTINGS, ...data };
+        }
+      }
       saveToCache();
       renderAll();
       toast('تم تحديث إعدادات الموقع', 'info');
