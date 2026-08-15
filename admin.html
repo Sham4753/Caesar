@@ -314,7 +314,20 @@
 <!-- Firebase SDK (optional) -->
 <!-- <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script> -->
 <!-- <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script> -->
-<!-- <script> const firebaseConfig = { ... }; firebase.initializeApp(firebaseConfig); const db = firebase.firestore(); </script> -->
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDkm_7B-gaoRcnv9YICglkdbeWDuMIpj0U",
+  authDomain: "caesar-restaurant-4753.firebaseapp.com",
+  projectId: "caesar-restaurant-4753",
+  storageBucket: "caesar-restaurant-4753.firebasestorage.app",
+  messagingSenderId: "854904444247",
+  appId: "1:854904444247:web:be4ab39123bd6925c4da12"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+</script>
 
 <script src="./js/admin.js"></script>
 </body>

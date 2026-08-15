@@ -199,10 +199,34 @@
 <!-- Toast Container -->
 <div id="toastContainer" class="toast-container"></div>
 
-<!-- Firebase SDK (optional - only if you configure it) -->
-<!-- <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script> -->
-<!-- <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script> -->
-<!-- <script> const firebaseConfig = { ... }; firebase.initializeApp(firebaseConfig); const db = firebase.firestore(); </script> -->
+<!-- ═══════════════════════════════════════════ -->
+<!--  FIREBASE SETUP — ضع بياناتك هنا          -->
+<!--  1. اذهب إلى https://console.firebase.google.com -->
+<!--  2. أنشئ مشروع → اضف تطبيق ويب              -->
+<!--  3. انسخ firebaseConfig وضعه بالأسفل        -->
+<!-- ═══════════════════════════════════════════ -->
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+<script>
+  // 🔴 ضع بيانات Firebase هنا:
+  const firebaseConfig = {
+    apiKey: "AIzaSyDkm_7B-gaoRcnv9YICglkdbeWDuMIpj0U",
+    authDomain: "caesar-restaurant-4753.firebaseapp.com",
+    projectId: "caesar-restaurant-4753",
+    storageBucket: "caesar-restaurant-4753.firebasestorage.app",
+    messagingSenderId: "854904444247",
+    appId: "1:854904444247:web:be4ab39123bd6925c4da12"
+  };
+  // إذا لم تضع بيانات صحيحة، سيعمل الموقع من الكاش المحلي
+  try {
+    firebase.initializeApp(firebaseConfig);
+    window.db = firebase.firestore();
+    console.log('✅ Firebase connected');
+  } catch(e) {
+    console.log('⚠️ Firebase not configured — using local data only');
+    window.db = null;
+  }
+</script>
 
 <script src="./js/app.js"></script>
 <script>

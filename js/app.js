@@ -1,6 +1,6 @@
 // ═══════════════════════════════════════════
-//  مطعم القيصر - منطق التطبيق (الزبائن) v3.0
-//  FIXED: XSS, Dead Code, Validation, Rate Limiting
+//  مطعم القيصر - منطق التطبيق (الزبائن) v4.0
+//  REAL-TIME: Firestore is primary, localStorage is cache only
 // ═══════════════════════════════════════════
 
 // ===== SECURITY: XSS SANITIZER =====
@@ -11,35 +11,19 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// ===== DATA STORE =====
+// ===== DATA STORE (cache only) =====
 const DB = {
   get(k, d) {
     try { let v = localStorage.getItem('alqaysar_' + k); return v ? JSON.parse(v) : d; }
     catch(e) { return d; }
   },
   set(k, v) {
-    try {
-      const s = JSON.stringify(v);
-      // Warn if approaching localStorage limit (~5MB)
-      let total = 0;
-      for (let i = 0; i < localStorage.length; i++) {
-        total += (localStorage.getItem(localStorage.key(i)) || '').length * 2;
-      }
-      if (total + s.length * 2 > 4.5 * 1024 * 1024) {
-        console.warn('localStorage almost full! Export backup soon.');
-      }
-      localStorage.setItem('alqaysar_' + k, s);
-    }
-    catch(e) {
-      console.warn('localStorage failed:', e);
-      if (e.name === 'QuotaExceededError') {
-        alert('⚠️ ذاكرة المتصفح ممتلئة! صدّر نسخة احتياطية وحذف بعض الصور الكبيرة.');
-      }
-    }
+    try { localStorage.setItem('alqaysar_' + k, JSON.stringify(v)); }
+    catch(e) { console.warn('localStorage failed:', e); }
   }
 };
 
-// ===== DEFAULT DATA =====
+// ===== DEFAULT DATA (fallback when offline) =====
 const DEFAULT_CATEGORIES = [
   { id: 1, name: 'شاورما', icon: 'fa-drumstick-bite' },
   { id: 2, name: 'برجر', icon: 'fa-hamburger' },
@@ -88,34 +72,24 @@ const DEFAULT_SETTINGS = {
   hours: '10:00 ص - 12:00 ص',
   phone: '0999123456', phone2: '', whatsapp: '0999123456',
   email: '', alertText: 'الأسعار قابلة للتعديل حسب النشرة اليومية',
-  deliveryEnabled: true, defaultZoneFee: 5000,
+  deliveryEnabled: true, defaultZoneFee: 5000, logo: '',
   facebook: '', instagram: '', twitter: '', tiktok: '', snapchat: '', youtube: ''
+};
+
+// ===== IN-MEMORY DATA (real-time source) =====
+let liveData = {
+  categories: DEFAULT_CATEGORIES,
+  menu: DEFAULT_MENU,
+  offers: DEFAULT_OFFERS,
+  zones: DEFAULT_ZONES,
+  settings: DEFAULT_SETTINGS
 };
 
 function initDefaults() {
   if (!DB.get('initialized')) {
-    DB.set('categories', DEFAULT_CATEGORIES);
-    DB.set('menu', DEFAULT_MENU);
-    DB.set('offers', DEFAULT_OFFERS);
-    DB.set('zones', DEFAULT_ZONES);
-    DB.set('settings', DEFAULT_SETTINGS);
-    DB.set('password', 'MzIxbmltZGFhbHFheXNhcl9zYWx0'); // simpleHash('admin123')
     DB.set('cart', {});
     DB.set('initialized', true);
   }
-}
-
-function safeGet(key, defaults) {
-  let data = DB.get(key, null);
-  if (!data || (Array.isArray(defaults) && (!Array.isArray(data) || data.length === 0))) {
-    if (key === 'categories') { DB.set(key, DEFAULT_CATEGORIES); return DEFAULT_CATEGORIES; }
-    if (key === 'menu') { DB.set(key, DEFAULT_MENU); return DEFAULT_MENU; }
-    if (key === 'offers') { DB.set(key, DEFAULT_OFFERS); return DEFAULT_OFFERS; }
-    if (key === 'zones') { DB.set(key, DEFAULT_ZONES); return DEFAULT_ZONES; }
-    if (key === 'settings') { DB.set(key, DEFAULT_SETTINGS); return DEFAULT_SETTINGS; }
-    return defaults;
-  }
-  return data;
 }
 
 // ===== STATE =====
@@ -124,19 +98,38 @@ let deliveryMode = 'delivery';
 let selectedZone = null;
 let deferredPrompt = null;
 let lastOrderTime = 0;
+let isOnline = true;
 
 // ===== INIT =====
 document.addEventListener('DOMContentLoaded', function() {
   try {
     initDefaults();
-    renderAll();
     loadCart();
     setupPWA();
-    // FIXED: removed dead return, firestore sync happens in background
-    loadMenuFromFirestore().then(() => {
+
+    // Try to load from Firestore first (real-time), fallback to cache
+    if (typeof db !== 'undefined' && db) {
+      setupRealtimeListeners();
+      // Show cached data immediately while loading from cloud
+      const cached = loadFromCache();
+      if (cached) {
+        liveData = cached;
+        renderAll();
+      }
+    } else {
+      // No Firebase — use cache or defaults
+      const cached = loadFromCache();
+      liveData = cached || {
+        categories: DEFAULT_CATEGORIES,
+        menu: DEFAULT_MENU,
+        offers: DEFAULT_OFFERS,
+        zones: DEFAULT_ZONES,
+        settings: DEFAULT_SETTINGS
+      };
       renderAll();
-    }).catch(e => console.log('sync skipped:', e));
-    // Hide loader after render
+    }
+
+    // Hide loader
     setTimeout(function() {
       var ls = document.getElementById('loadingScreen');
       if (ls) ls.classList.add('hidden');
@@ -149,10 +142,110 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 });
 
+// ===== CACHE HELPERS =====
+function loadFromCache() {
+  try {
+    const cats = DB.get('categories', null);
+    const menu = DB.get('menu', null);
+    const offers = DB.get('offers', null);
+    const zones = DB.get('zones', null);
+    const settings = DB.get('settings', null);
+    if (cats && menu && offers && zones && settings) {
+      return { categories: cats, menu: menu, offers: offers, zones: zones, settings: settings };
+    }
+  } catch(e) {}
+  return null;
+}
+
+function saveToCache() {
+  DB.set('categories', liveData.categories);
+  DB.set('menu', liveData.menu);
+  DB.set('offers', liveData.offers);
+  DB.set('zones', liveData.zones);
+  DB.set('settings', liveData.settings);
+}
+
+// ===== REAL-TIME FIRESTORE LISTENERS =====
+function setupRealtimeListeners() {
+  if (typeof db === 'undefined' || !db) return;
+
+  // Categories listener
+  db.collection('categories').onSnapshot((snapshot) => {
+    const cats = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const id = data.id !== undefined ? data.id : (isNaN(doc.id) ? doc.id : parseInt(doc.id));
+      cats.push({ id: id, ...data });
+    });
+    if (cats.length > 0) {
+      liveData.categories = cats;
+      saveToCache();
+      renderCategories();
+      renderMenu();
+      toast('تم تحديث التصنيفات', 'info');
+    }
+  }, (err) => { console.log('Categories listener error:', err); });
+
+  // Menu listener
+  db.collection('menu').onSnapshot((snapshot) => {
+    const menu = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const id = data.id !== undefined ? data.id : (isNaN(doc.id) ? doc.id : parseInt(doc.id));
+      menu.push({ id: id, ...data });
+    });
+    if (menu.length > 0) {
+      liveData.menu = menu;
+      saveToCache();
+      renderMenu();
+      toast('تم تحديث القائمة', 'info');
+    }
+  }, (err) => { console.log('Menu listener error:', err); });
+
+  // Offers listener
+  db.collection('offers').onSnapshot((snapshot) => {
+    const offers = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const id = data.id !== undefined ? data.id : (isNaN(doc.id) ? doc.id : parseInt(doc.id));
+      offers.push({ id: id, ...data });
+    });
+    liveData.offers = offers;
+    saveToCache();
+    renderOffers();
+    toast('تم تحديث العروض', 'info');
+  }, (err) => { console.log('Offers listener error:', err); });
+
+  // Zones listener (one-time load is enough for zones)
+  db.collection('zones').get().then((snapshot) => {
+    const zones = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const id = data.id !== undefined ? data.id : (isNaN(doc.id) ? doc.id : parseInt(doc.id));
+      zones.push({ id: id, ...data });
+    });
+    if (zones.length > 0) {
+      liveData.zones = zones;
+      saveToCache();
+      renderZones();
+    }
+  }).catch(err => console.log('Zones load error:', err));
+
+  // Settings listener
+  db.collection('settings').doc('main').onSnapshot((doc) => {
+    if (doc.exists) {
+      liveData.settings = { ...DEFAULT_SETTINGS, ...doc.data() };
+      saveToCache();
+      renderAll();
+      toast('تم تحديث إعدادات الموقع', 'info');
+    }
+  }, (err) => { console.log('Settings listener error:', err); });
+}
+
 // ===== RENDER ALL =====
 function renderAll() {
   try {
-    const s = safeGet('settings', DEFAULT_SETTINGS);
+    const s = liveData.settings;
     const alertEl = document.getElementById('alertText');
     if (alertEl) alertEl.textContent = s.alertText || 'الأسعار قابلة للتعديل حسب النشرة اليومية';
 
@@ -160,7 +253,8 @@ function renderAll() {
     const logoTextSpan = document.querySelector('.logo-text span');
     if (logoTextH1) logoTextH1.textContent = s.name || 'مطعم القيصر';
     if (logoTextSpan) logoTextSpan.textContent = s.subtitle || 'أشهى المأكولات';
-    // Apply custom logo if set
+
+    // Apply custom logo
     if (s.logo) {
       document.querySelectorAll('img[src="./images/logo.png"]').forEach(img => img.src = s.logo);
     }
@@ -201,7 +295,7 @@ function renderAll() {
 
 // ===== ZONES =====
 function renderZones() {
-  const zones = safeGet('zones', DEFAULT_ZONES);
+  const zones = liveData.zones;
   const sel = document.getElementById('zoneSelect');
   if (!sel) return;
   sel.innerHTML = '<option value="">-- اختر المنطقة --</option>' +
@@ -210,7 +304,7 @@ function renderZones() {
 
 function updateZoneFee() {
   const zoneId = document.getElementById('zoneSelect').value;
-  const zones = safeGet('zones', DEFAULT_ZONES);
+  const zones = liveData.zones;
   selectedZone = zones.find(z => z.id == zoneId);
   const display = document.getElementById('zoneFeeDisplay');
   if (display) {
@@ -237,10 +331,9 @@ function setDeliveryMode(mode, btn) {
 
 // ===== CATEGORIES =====
 function renderCategories() {
-  const cats = safeGet('categories', DEFAULT_CATEGORIES);
+  const cats = liveData.categories;
   const scroll = document.getElementById('categoriesScroll');
   if (!scroll) return;
-  // Use DOM methods instead of innerHTML for security
   scroll.innerHTML = '';
   const allBtn = document.createElement('button');
   allBtn.className = 'cat-chip active';
@@ -267,7 +360,7 @@ function filterCategory(cat, btn) {
 
 // ===== MENU =====
 function renderMenu() {
-  const items = safeGet('menu', DEFAULT_MENU).filter(i => i.active !== false);
+  const items = liveData.menu.filter(i => i.active !== false);
   const filtered = currentCategory === 'all' ? items : items.filter(i => i.category == currentCategory);
   const grid = document.getElementById('menuGrid');
   const empty = document.getElementById('menuEmpty');
@@ -356,7 +449,7 @@ function renderMenu() {
 
 // ===== OFFERS =====
 function renderOffers() {
-  const offers = safeGet('offers', DEFAULT_OFFERS).filter(o => o.active);
+  const offers = liveData.offers.filter(o => o.active);
   const section = document.getElementById('offersSection');
   if (!section) return;
   if (!offers.length) { section.style.display = 'none'; return; }
@@ -397,7 +490,6 @@ function renderOffers() {
         (o.oldPrice ? '<span class="old">' + formatPrice(o.oldPrice) + '</span>' : '') +
       '</div>';
 
-    // FIXED: Add to cart button for offers
     const addOfferBtn = document.createElement('button');
     addOfferBtn.className = 'btn-whatsapp';
     addOfferBtn.style.cssText = 'margin-top:10px;padding:8px;font-size:13px;';
@@ -412,7 +504,6 @@ function renderOffers() {
 
 function addOfferToCart(offer) {
   const cart = DB.get('cart', {});
-  // Use negative IDs for offers to avoid collision with menu items
   const offerId = 'offer_' + offer.id;
   cart[offerId] = (cart[offerId] || 0) + 1;
   DB.set('cart', cart);
@@ -423,11 +514,10 @@ function addOfferToCart(offer) {
 // ===== CART =====
 function updateQty(itemId, delta) {
   const cart = DB.get('cart', {});
-  const items = safeGet('menu', DEFAULT_MENU);
+  const items = liveData.menu;
   const item = items.find(i => i.id === itemId);
   if (!item) {
-    // Check if it's an offer
-    const offers = safeGet('offers', DEFAULT_OFFERS);
+    const offers = liveData.offers;
     const offer = offers.find(o => 'offer_' + o.id === itemId);
     if (!offer) return;
     let qty = (cart[itemId] || 0) + delta;
@@ -454,8 +544,8 @@ function updateQty(itemId, delta) {
 
 function updateCartBar() {
   const cart = DB.get('cart', {});
-  const items = safeGet('menu', DEFAULT_MENU);
-  const offers = safeGet('offers', DEFAULT_OFFERS);
+  const items = liveData.menu;
+  const offers = liveData.offers;
   let totalItems = 0, subtotal = 0;
 
   for (let id in cart) {
@@ -490,8 +580,8 @@ function loadCart() { updateCartBar(); }
 // ===== CART MODAL =====
 function openCartModal() {
   const cart = DB.get('cart', {});
-  const items = safeGet('menu', DEFAULT_MENU);
-  const offers = safeGet('offers', DEFAULT_OFFERS);
+  const items = liveData.menu;
+  const offers = liveData.offers;
   const body = document.getElementById('cartModalBody');
   const footer = document.getElementById('cartModalFooter');
 
@@ -559,7 +649,6 @@ function closeCartModal() {
 function sendWhatsAppOrder() {
   const cart = DB.get('cart', {});
   if (!Object.keys(cart).length) { toast('السلة فارغة', 'error'); return; }
-  // Rate limiting: prevent orders more than once per 10 seconds
   const now = Date.now();
   if (now - lastOrderTime < 10000) {
     toast('يرجى الانتظار قليلاً قبل إرسال طلب جديد', 'error');
@@ -586,9 +675,9 @@ function confirmOrder() {
   if (deliveryMode === 'delivery' && !selectedZone) { toast('يرجى اختيار المنطقة', 'error'); return; }
 
   const cart = DB.get('cart', {});
-  const items = safeGet('menu', DEFAULT_MENU);
-  const offers = safeGet('offers', DEFAULT_OFFERS);
-  const s = safeGet('settings', DEFAULT_SETTINGS);
+  const items = liveData.menu;
+  const offers = liveData.offers;
+  const s = liveData.settings;
 
   let subtotal = 0;
   let itemsText = '';
@@ -696,38 +785,3 @@ document.addEventListener('click', (e) => {
     document.body.style.overflow = '';
   }
 });
-
-// ===== FIRESTORE =====
-let lastSyncTime = parseInt(localStorage.getItem('alqaysar_last_sync')) || 0;
-function shouldSync() {
-  return (Date.now() - lastSyncTime) > 60000;
-}
-
-async function loadMenuFromFirestore() {
-  if (!shouldSync()) return;
-  if (typeof db === 'undefined' || !db) { console.log('Firebase not initialized'); return; }
-  try {
-    const catsSnap = await db.collection('categories').orderBy('createdAt').get();
-    const itemsSnap = await db.collection('menu').orderBy('createdAt').get();
-    const offersSnap = await db.collection('offers').orderBy('createdAt').get();
-
-    const categories = [];
-    catsSnap.forEach(doc => { categories.push({ id: doc.id, ...doc.data() }); });
-
-    const menu = [];
-    itemsSnap.forEach(doc => { menu.push({ id: doc.id, ...doc.data() }); });
-
-    const offers = [];
-    offersSnap.forEach(doc => { offers.push({ id: doc.id, ...doc.data() }); });
-
-    localStorage.setItem('alqaysar_categories', JSON.stringify(categories));
-    localStorage.setItem('alqaysar_menu', JSON.stringify(menu));
-    localStorage.setItem('alqaysar_offers', JSON.stringify(offers));
-    localStorage.setItem('alqaysar_last_sync', Date.now().toString());
-
-    renderMenu();
-    renderOffers();
-  } catch(e) {
-    console.error('Firestore error:', e);
-  }
-}

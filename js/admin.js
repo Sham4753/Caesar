@@ -132,7 +132,8 @@ function handleImageUpload(inputEl, previewId, urlInputId) {
     let img = new Image();
     img.onload = function() {
       let canvas = document.createElement("canvas");
-      let MAX = 400;
+      // Smaller for Firestore: 300px max, JPEG 40%
+      let MAX = 300;
       let w = img.width, h = img.height;
       if (w > MAX || h > MAX) {
         if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
@@ -140,12 +141,20 @@ function handleImageUpload(inputEl, previewId, urlInputId) {
       }
       canvas.width = w; canvas.height = h;
       canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-      let base64 = canvas.toDataURL("image/jpeg", 0.5);
+      let base64 = canvas.toDataURL("image/jpeg", 0.4);
+      // Warn if still too large for Firestore (1MB doc limit)
+      if (base64.length > 800000) {
+        toast('⚠️ الصورة كبيرة — جارٍ ضغط إضافي...', 'info');
+        canvas.width = Math.round(w * 0.7);
+        canvas.height = Math.round(h * 0.7);
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        base64 = canvas.toDataURL("image/jpeg", 0.3);
+      }
       let preview = document.getElementById(previewId);
       if (preview) { preview.src = base64; preview.style.display = 'block'; }
       let urlInput = document.getElementById(urlInputId);
       if (urlInput) urlInput.value = base64;
-      toast('تم تحميل الصورة من الجوال');
+      toast('تم تحميل الصورة');
     };
     img.src = ev.target.result;
   };
@@ -732,40 +741,50 @@ async function syncToFirestore() {
     const categories = DB.get('categories', []);
     const menu = DB.get('menu', []);
     const offers = DB.get('offers', []);
+    const zones = DB.get('zones', []);
+    const settings = DB.get('settings', {});
 
-    // Use batch writes instead of delete-all
+    // Use batch writes for categories, menu, offers
     const batch = db.batch();
-
-    // For simplicity: clear and re-add with batch (safer than individual deletes)
     const catsRef = db.collection('categories');
     const menuRef = db.collection('menu');
     const offersRef = db.collection('offers');
+    const zonesRef = db.collection('zones');
 
     // Get existing docs and delete them in batch
-    const [catsSnap, menuSnap, offersSnap] = await Promise.all([
-      catsRef.get(), menuRef.get(), offersRef.get()
+    const [catsSnap, menuSnap, offersSnap, zonesSnap] = await Promise.all([
+      catsRef.get(), menuRef.get(), offersRef.get(), zonesRef.get()
     ]);
 
     catsSnap.forEach(doc => batch.delete(doc.ref));
     menuSnap.forEach(doc => batch.delete(doc.ref));
     offersSnap.forEach(doc => batch.delete(doc.ref));
+    zonesSnap.forEach(doc => batch.delete(doc.ref));
 
-    // Add new docs with preserved IDs (use String(id) for Firestore doc IDs)
+    // Add new docs with preserved IDs
     categories.forEach(cat => {
       const ref = catsRef.doc(String(cat.id));
-      batch.set(ref, { ...cat, createdAt: Date.now() });
+      batch.set(ref, { ...cat, updatedAt: Date.now() });
     });
     menu.forEach(item => {
       const ref = menuRef.doc(String(item.id));
-      batch.set(ref, { ...item, createdAt: Date.now() });
+      batch.set(ref, { ...item, updatedAt: Date.now() });
     });
     offers.forEach(offer => {
       const ref = offersRef.doc(String(offer.id));
-      batch.set(ref, { ...offer, createdAt: Date.now() });
+      batch.set(ref, { ...offer, updatedAt: Date.now() });
+    });
+    zones.forEach(zone => {
+      const ref = zonesRef.doc(String(zone.id));
+      batch.set(ref, { ...zone, updatedAt: Date.now() });
     });
 
     await batch.commit();
-    toast('✅ تم مزامنة البيانات مع السحابة');
+
+    // Save settings as a single document
+    await db.collection('settings').doc('main').set({ ...settings, updatedAt: Date.now() });
+
+    toast('✅ تم مزامنة البيانات مع السحابة — جميع الزبائن سيرون التحديث فوراً');
   } catch(e) {
     console.error('Firestore sync error:', e);
     toast('خطأ في المزامنة: ' + e.message, 'error');
