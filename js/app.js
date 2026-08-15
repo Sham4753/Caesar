@@ -99,7 +99,7 @@ function initDefaults() {
     DB.set('offers', DEFAULT_OFFERS);
     DB.set('zones', DEFAULT_ZONES);
     DB.set('settings', DEFAULT_SETTINGS);
-    DB.set('password', 'YWRtaW4xMjM='); // base64 of 'admin123' reversed hint
+    DB.set('password', 'MzIxbmltZGFhbHFheXNhcl9zYWx0'); // simpleHash('admin123')
     DB.set('cart', {});
     DB.set('initialized', true);
   }
@@ -160,6 +160,10 @@ function renderAll() {
     const logoTextSpan = document.querySelector('.logo-text span');
     if (logoTextH1) logoTextH1.textContent = s.name || 'مطعم القيصر';
     if (logoTextSpan) logoTextSpan.textContent = s.subtitle || 'أشهى المأكولات';
+    // Apply custom logo if set
+    if (s.logo) {
+      document.querySelectorAll('img[src="./images/logo.png"]').forEach(img => img.src = s.logo);
+    }
 
     const footerDesc = document.getElementById('footerDesc');
     const footerPhone = document.getElementById('footerPhone');

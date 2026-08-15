@@ -606,6 +606,11 @@ function closeZoneModal() {
 function loadSettings() {
   let s = DB.get('settings', {});
   let setVal = (id, val) => { let el = document.getElementById(id); if (el) el.value = val || ''; };
+  // Logo preview
+  let logoPreview = document.getElementById('site-logo-preview');
+  let logoInput = document.getElementById('site-logo');
+  if (logoPreview && s.logo) { logoPreview.src = s.logo; logoPreview.style.display = 'block'; }
+  if (logoInput && s.logo) logoInput.value = s.logo;
   setVal('site-name', s.name);
   setVal('site-subtitle', s.subtitle);
   setVal('site-desc', s.desc);
@@ -627,6 +632,7 @@ function loadSettings() {
 function saveSettings() {
   let s = DB.get('settings', {});
   let getVal = (id) => { let el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  s.logo = document.getElementById('site-logo').value.trim();
   s.name = getVal('site-name');
   s.subtitle = getVal('site-subtitle');
   s.desc = getVal('site-desc');
@@ -744,17 +750,17 @@ async function syncToFirestore() {
     menuSnap.forEach(doc => batch.delete(doc.ref));
     offersSnap.forEach(doc => batch.delete(doc.ref));
 
-    // Add new docs
+    // Add new docs with preserved IDs (use String(id) for Firestore doc IDs)
     categories.forEach(cat => {
-      const ref = catsRef.doc();
+      const ref = catsRef.doc(String(cat.id));
       batch.set(ref, { ...cat, createdAt: Date.now() });
     });
     menu.forEach(item => {
-      const ref = menuRef.doc();
+      const ref = menuRef.doc(String(item.id));
       batch.set(ref, { ...item, createdAt: Date.now() });
     });
     offers.forEach(offer => {
-      const ref = offersRef.doc();
+      const ref = offersRef.doc(String(offer.id));
       batch.set(ref, { ...offer, createdAt: Date.now() });
     });
 
