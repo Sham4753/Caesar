@@ -785,3 +785,82 @@ document.addEventListener('click', (e) => {
     document.body.style.overflow = '';
   }
 });
+
+
+// ═══════════════════════════════════════════
+//  FIRESTORE REAL-TIME LISTENERS
+// ═══════════════════════════════════════════
+
+function setupRealtimeListeners() {
+  if (typeof db === 'undefined' || !db) {
+    console.log('Firebase not available — using local data');
+    return;
+  }
+
+  // Categories real-time
+  db.collection('categories').onSnapshot((snapshot) => {
+    const cats = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const id = data.id !== undefined ? data.id : (isNaN(doc.id) ? doc.id : parseInt(doc.id));
+      cats.push({ id: id, ...data });
+    });
+    if (cats.length > 0) {
+      liveData.categories = cats;
+      DB.set('categories', cats);
+      renderCategories();
+      renderMenu();
+    }
+  }, (err) => { console.log('Categories listener:', err); });
+
+  // Menu real-time
+  db.collection('menu').onSnapshot((snapshot) => {
+    const menu = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const id = data.id !== undefined ? data.id : (isNaN(doc.id) ? doc.id : parseInt(doc.id));
+      menu.push({ id: id, ...data });
+    });
+    if (menu.length > 0) {
+      liveData.menu = menu;
+      DB.set('menu', menu);
+      renderMenu();
+    }
+  }, (err) => { console.log('Menu listener:', err); });
+
+  // Offers real-time
+  db.collection('offers').onSnapshot((snapshot) => {
+    const offers = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const id = data.id !== undefined ? data.id : (isNaN(doc.id) ? doc.id : parseInt(doc.id));
+      offers.push({ id: id, ...data });
+    });
+    liveData.offers = offers;
+    DB.set('offers', offers);
+    renderOffers();
+  }, (err) => { console.log('Offers listener:', err); });
+
+  // Zones real-time
+  db.collection('zones').onSnapshot((snapshot) => {
+    const zones = [];
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      const id = data.id !== undefined ? data.id : (isNaN(doc.id) ? doc.id : parseInt(doc.id));
+      zones.push({ id: id, ...data });
+    });
+    liveData.zones = zones;
+    DB.set('zones', zones);
+    renderZones();
+  }, (err) => { console.log('Zones listener:', err); });
+
+  // Settings real-time
+  db.collection('settings').doc('main').onSnapshot((doc) => {
+    if (doc.exists) {
+      liveData.settings = { ...DEFAULT_SETTINGS, ...doc.data() };
+      DB.set('settings', liveData.settings);
+      renderAll();
+    }
+  }, (err) => { console.log('Settings listener:', err); });
+}
+
