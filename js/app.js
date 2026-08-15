@@ -234,12 +234,7 @@ function setupRealtimeListeners() {
   // Settings listener
   db.collection('settings').doc('main').onSnapshot((doc) => {
     if (doc.exists) {
-      if (doc.exists && doc.data()) {
-        const data = doc.data();
-        if (Object.keys(data).length > 0) {
-          liveData.settings = { ...DEFAULT_SETTINGS, ...data };
-        }
-      }
+      liveData.settings = { ...DEFAULT_SETTINGS, ...doc.data() };
       saveToCache();
       renderAll();
       toast('تم تحديث إعدادات الموقع', 'info');
@@ -861,10 +856,14 @@ function setupRealtimeListeners() {
 
   // Settings real-time
   db.collection('settings').doc('main').onSnapshot((doc) => {
-    if (doc.exists) {
-      liveData.settings = { ...DEFAULT_SETTINGS, ...doc.data() };
-      DB.set('settings', liveData.settings);
-      renderAll();
+    if (doc.exists && doc.data()) {
+      const data = doc.data();
+      // Only merge if Firestore has actual data, not empty
+      if (Object.keys(data).length > 0) {
+        liveData.settings = { ...DEFAULT_SETTINGS, ...data };
+        DB.set('settings', liveData.settings);
+        renderAll();
+      }
     }
   }, (err) => { console.log('Settings listener:', err); });
 }

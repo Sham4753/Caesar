@@ -668,8 +668,7 @@ function saveSettings() {
     document.getElementById('confirm-password').value = '';
   }
   DB.set('settings', s);
-  syncToFirestore();
-  toast('تم حفظ الإعدادات وتمت المزامنة');
+  toast('تم حفظ الإعدادات');
 }
 
 // ===== EXPORT / IMPORT / RESET =====
