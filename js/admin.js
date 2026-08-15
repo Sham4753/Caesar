@@ -797,52 +797,5 @@ async function syncToFirestore() {
 //  FIRESTORE AUTO-SYNC
 // ═══════════════════════════════════════════
 
-async function syncToFirestore() {
-  if (typeof db === 'undefined' || !db) { console.log('Firebase not available'); return; }
-  try {
-    const categories = DB.get('categories', []);
-    const menu = DB.get('menu', []);
-    const offers = DB.get('offers', []);
-    const zones = DB.get('zones', []);
-    const settings = DB.get('settings', {});
 
-    const batch = db.batch();
-    const catsRef = db.collection('categories');
-    const menuRef = db.collection('menu');
-    const offersRef = db.collection('offers');
-    const zonesRef = db.collection('zones');
-
-    const [catsSnap, menuSnap, offersSnap, zonesSnap] = await Promise.all([
-      catsRef.get(), menuRef.get(), offersRef.get(), zonesRef.get()
-    ]);
-    catsSnap.forEach(doc => batch.delete(doc.ref));
-    menuSnap.forEach(doc => batch.delete(doc.ref));
-    offersSnap.forEach(doc => batch.delete(doc.ref));
-    zonesSnap.forEach(doc => batch.delete(doc.ref));
-
-    categories.forEach(cat => {
-      batch.set(catsRef.doc(String(cat.id)), { ...cat, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    });
-    menu.forEach(item => {
-      batch.set(menuRef.doc(String(item.id)), { ...item, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    });
-    offers.forEach(offer => {
-      batch.set(offersRef.doc(String(offer.id)), { ...offer, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    });
-    zones.forEach(zone => {
-      batch.set(zonesRef.doc(String(zone.id)), { ...zone, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    });
-
-    await batch.commit();
-    await db.collection('settings').doc('main').set({
-      ...settings,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-
-    toast('✅ تم المزامنة مع السحابة');
-  } catch(e) {
-    console.error('Firestore sync error:', e);
-    toast('⚠️ لم تتم المزامنة: ' + e.message, 'error');
-  }
-}
 
